@@ -1,7 +1,5 @@
 from numpy import sum, abs, sqrt, ndarray
 
-from numpy import sum, abs, sqrt, ndarray
-
 def validate_1d_same_length_arrays(x1: ndarray, x2: ndarray) -> None:
     """
     Validates that both x1 and x2 are 1D numpy arrays of the same length.

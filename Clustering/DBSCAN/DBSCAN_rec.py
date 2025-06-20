@@ -1,6 +1,13 @@
+import os
+import sys
 import numpy as np
-import distance_measures as measures
 from typing import Callable
+
+# Add a path to a directory with distance_measures module
+parent_dir = os.path.abspath(os.path.join(os.getcwd(), '..'))
+sys.path.insert(0, parent_dir)
+
+import distance_measures as measures
 
 class DBSCAN:
     """
