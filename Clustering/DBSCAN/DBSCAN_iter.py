@@ -4,7 +4,7 @@ import numpy as np
 from typing import Callable
 
 # Add a path to a directory with distance_measures module
-parent_dir = os.path.abspath(os.path.join(os.getcwd(), '..'))
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
 sys.path.insert(0, parent_dir)
 
 import distance_measures as measures
