@@ -27,7 +27,7 @@ class NelderMeadOptimizer:
         self.eps = eps
         self.norm = norm
 
-    def stopping_condition(self, X: np.ndarray) -> bool:
+    def _stopping_condition(self, X: np.ndarray) -> bool:
         """
         Check if the simplex vertices are close enough to stop the algorithm.
 
@@ -37,10 +37,10 @@ class NelderMeadOptimizer:
         Returns:
             bool: True if the maximum distance from the best vertex is less than eps.
         """
-        distances = np.apply_along_axis(lambda x: self.norm(x - X[0, :]), 1, X[1:])
+        distances = np.apply_along_axis(lambda x: self.norm(x, X[0]), 1, X[1:])
         return np.max(distances) < self.eps
 
-    def update_vertices(self, X: np.ndarray) -> np.ndarray:
+    def _update_vertices(self, X: np.ndarray) -> np.ndarray:
         """
         Shrink all vertices towards the best vertex (first row).
 
@@ -76,7 +76,7 @@ class NelderMeadOptimizer:
         X = np.vstack([x0, x0 + delta * np.eye(n, dtype=np.float64)])
         iter_count: int = 1
 
-        while not self.stopping_condition(X):
+        while not self._stopping_condition(X):
             # Evaluate function at all simplex vertices
             f_val = np.apply_along_axis(f, 1, X)
             # Sort vertices by function value (ascending)
@@ -104,14 +104,14 @@ class NelderMeadOptimizer:
                 if f(xz) < f(xr):
                     X[-1, :] = xz
                 else:
-                    X = self.update_vertices(X)
+                    X = self._update_vertices(X)
             else:
                 # Inside contraction
                 xw = c - 0.5 * (c - X[-1, :])
                 if f(xw) < f(X[-1, :]):
                     X[-1, :] = xw
                 else:
-                    X = self.update_vertices(X)
+                    X = self._update_vertices(X)
 
             iter_count += 1
 
