@@ -10,39 +10,57 @@ sys.path.insert(0, parent_dir)
 import differentiating as diff
 
 
-def gradient_descent(
-    f: Callable[[np.ndarray], float],
-    x0: np.ndarray,
-    lr: float,
-    eps: float,
-    h: float = 0.01,
-    num_der: Callable = diff.central_difference
-) -> np.ndarray:
+class GradientDescentOptimizer:
     """
-    Perform gradient descent optimization.
+    Gradient Descent optimizer with configurable parameters.
 
     Args:
-        f (Callable): Function to minimize.
-        x0 (np.ndarray): Initial point.
         lr (float): Learning rate.
         eps (float): Stopping criterion for the gradient norm.
-        h (float, optional): Step size for numerical differentiation. Default is 0.01.
-        num_der (Callable, optional): Numerical differentiation method. Default is central_difference.
-
-    Returns:
-        np.ndarray: The point that (approximately) minimizes the function.
+        h (float): Step size for numerical differentiation.
+        num_der (Callable): Numerical differentiation method.
     """
 
-    # Compute the gradient at the initial point
-    grad_x0: np.ndarray = num_der(f, x0, h)
+    def __init__(
+        self,
+        lr: float,
+        eps: float,
+        h: float = 0.01,
+        num_der: Callable = diff.central_difference
+    ) -> None:
+        self.lr = lr
+        self.eps = eps
+        self.h = h
+        self.num_der = num_der
 
-    # Iterate until the gradient norm is less than the tolerance
-    while np.linalg.norm(grad_x0) > eps:
+    def optimize(
+        self,
+        f: Callable[[np.ndarray], float],
+        x0: np.ndarray
+    ) -> tuple[np.ndarray, int]:
+        """
+        Perform gradient descent optimization.
 
-        # Update the point in the direction of the negative gradient
-        x0 = x0 - lr * grad_x0
+        Args:
+            f (Callable): Function to minimize.
+            x0 (np.ndarray): Initial point.
 
-        # Recompute the gradient at the new point
-        grad_x0 = num_der(f, x0, h)
+        Returns:
+            tuple[np.ndarray, int]: The point that (approximately) minimizes the function and iteration count.
+        """
+        iter_count: int = 1
 
-    return x0
+        # Compute the gradient at the initial point
+        grad_x0: np.ndarray = self.num_der(f, x0, self.h)
+
+        # Iterate until the gradient norm is less than the tolerance
+        while np.linalg.norm(grad_x0) > self.eps:
+
+            # Update the point in the direction of the negative gradient
+            x0 = x0 - self.lr * grad_x0
+
+            # Recompute the gradient at the new point
+            grad_x0 = self.num_der(f, x0, self.h)
+            iter_count += 1
+
+        return x0, iter_count

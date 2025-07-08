@@ -15,21 +15,15 @@ class NelderMeadOptimizer:
     Nelder-Mead simplex optimization algorithm encapsulated in a class.
 
     Args:
-        f (Callable): Function to minimize.
-        x0 (np.ndarray): Initial guess, shape (n,).
         eps (float): Tolerance for stopping.
         norm (Callable): Norm function to compute distance.
     """
 
     def __init__(
         self,
-        f: Callable[[np.ndarray], float],
-        x0: np.ndarray,
         eps: float,
         norm: Callable[[np.ndarray], float] = dist_measures.Euclidean_distance
     ) -> None:
-        self.f = f
-        self.x0 = x0
         self.eps = eps
         self.norm = norm
 
@@ -60,22 +54,31 @@ class NelderMeadOptimizer:
         X[1:] = np.apply_along_axis(lambda x: x0 + 0.5 * (x - x0), 1, X[1:])
         return X
 
-    def optimize(self) -> np.ndarray:
+    def optimize(
+        self,
+        f: Callable[[np.ndarray], float],
+        x0: np.ndarray
+    ) -> tuple[np.ndarray, int]:
         """
         Run the Nelder-Mead simplex optimization algorithm.
 
+        Args:
+            f (Callable): Function to minimize.
+            x0 (np.ndarray): Initial guess, shape (n,).
+
         Returns:
-            np.ndarray: Estimated minimum point.
+            tuple[np.ndarray, int]: Estimated minimum point and iteration count.
         """
-        delta = 0.05 * np.linalg.norm(self.x0)
-        n = self.x0.shape[0]
+        delta = 0.05 * np.linalg.norm(x0)
+        n = x0.shape[0]
 
         # Initialize simplex: first vertex is x0, others are x0 + delta * unit vectors
-        X = np.vstack([self.x0, self.x0 + delta * np.eye(n, dtype=np.float64)])
+        X = np.vstack([x0, x0 + delta * np.eye(n, dtype=np.float64)])
+        iter_count: int = 1
 
         while not self.stopping_condition(X):
             # Evaluate function at all simplex vertices
-            f_val = np.apply_along_axis(self.f, 1, X)
+            f_val = np.apply_along_axis(f, 1, X)
             # Sort vertices by function value (ascending)
             X = X[np.argsort(f_val), :]
 
@@ -85,29 +88,31 @@ class NelderMeadOptimizer:
             # Reflection
             xr = c + (c - X[-1, :])
 
-            if self.f(xr) < self.f(X[0, :]):
+            if f(xr) < f(X[0, :]):
                 # Expansion
                 xs = c + 2 * (c - X[-1, :])
-                if self.f(xs) < self.f(xr):
+                if f(xs) < f(xr):
                     X[-1, :] = xs
                 else:
                     X[-1, :] = xr
-            elif self.f(xr) < self.f(X[-2, :]):
+            elif f(xr) < f(X[-2, :]):
                 # Accept reflection
                 X[-1, :] = xr
-            elif self.f(xr) < self.f(X[-1, :]):
+            elif f(xr) < f(X[-1, :]):
                 # Outside contraction
                 xz = c + 0.5 * (c - X[-1, :])
-                if self.f(xz) < self.f(xr):
+                if f(xz) < f(xr):
                     X[-1, :] = xz
                 else:
                     X = self.update_vertices(X)
             else:
                 # Inside contraction
                 xw = c - 0.5 * (c - X[-1, :])
-                if self.f(xw) < self.f(X[-1, :]):
+                if f(xw) < f(X[-1, :]):
                     X[-1, :] = xw
                 else:
                     X = self.update_vertices(X)
 
-        return X[0, :]
+            iter_count += 1
+
+        return X[0, :], iter_count

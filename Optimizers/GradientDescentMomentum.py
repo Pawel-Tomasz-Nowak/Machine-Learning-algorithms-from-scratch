@@ -1,52 +1,79 @@
 import numpy as np
+import os
+import sys
 from typing import Callable
+
+# Add parent directory to sys.path to allow importing modules from parent
+parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, parent_dir)
 
 import differentiating as diff
 
-def gradient_descent_momentum(
-    f: Callable[[np.ndarray], float],
-    x0: np.ndarray,
-    lr: float,
-    eps: float,
-    beta: float = 0.9,
-    h: float = 0.01,
-    Vt: np.ndarray | None = None,
-    num_der: Callable = diff.central_difference
-) -> np.ndarray:
+
+class GradientDescentMomentumOptimizer:
     """
-    Perform gradient descent optimization with momentum.
+    Gradient Descent optimizer with momentum and configurable parameters.
 
     Args:
-        f (Callable): Function to minimize.
-        x0 (np.ndarray): Initial point.
         lr (float): Learning rate.
         eps (float): Stopping criterion for the gradient norm.
-        beta (float, optional): Momentum hyperparameter. Default is 0.9.
-        h (float, optional): Step size for numerical differentiation. Default is 0.01.
-        Vt (np.ndarray or None, optional): Initial momentum vector. Default is zeros.
-        num_der (Callable, optional): Numerical differentiation method. Default is central_difference.
-
-    Returns:
-        np.ndarray: The point that (approximately) minimizes the function.
+        beta (float): Momentum hyperparameter.
+        h (float): Step size for numerical differentiation.
+        num_der (Callable): Numerical differentiation method.
     """
 
-    # Initialize momentum vector if not provided
-    if Vt is None:
-        Vt = np.zeros_like(x0)
+    def __init__(
+        self,
+        lr: float,
+        eps: float,
+        beta: float = 0.9,
+        h: float = 0.01,
+        num_der: Callable = diff.central_difference
+    ) -> None:
+        self.lr = lr
+        self.eps = eps
+        self.beta = beta
+        self.h = h
+        self.num_der = num_der
 
-    # Compute the gradient at the initial point
-    grad_x0: np.ndarray = num_der(f, x0, h)
+    def optimize(
+        self,
+        f: Callable[[np.ndarray], float],
+        x0: np.ndarray,
+        Vt: np.ndarray | None = None
+    ) -> tuple[np.ndarray, int]:
+        """
+        Perform gradient descent optimization with momentum.
 
-    # Iterate until the gradient norm is less than the tolerance
-    while np.linalg.norm(grad_x0) > eps:
+        Args:
+            f (Callable): Function to minimize.
+            x0 (np.ndarray): Initial point.
+            Vt (np.ndarray or None, optional): Initial momentum vector. Default is zeros.
 
-        # Update momentum
-        Vt = beta * Vt + (1 - beta) * grad_x0
+        Returns:
+            tuple[np.ndarray, int]: The point that (approximately) minimizes the function and iteration count.
+        """
+        iter_count: int = 1
 
-        # Update the point in the direction of the negative momentum
-        x0 = x0 - lr * Vt
+        # Initialize momentum vector if not provided
+        if Vt is None:
+            Vt = np.zeros_like(x0)
 
-        # Recompute the gradient at the new point
-        grad_x0 = num_der(f, x0, h)
+        # Compute the gradient at the initial point
+        grad_x0: np.ndarray = self.num_der(f, x0, self.h)
 
-    return x0
+        # Iterate until the gradient norm is less than the tolerance
+        while np.linalg.norm(grad_x0) > self.eps:
+
+            # Update momentum
+            Vt = self.beta * Vt + (1 - self.beta) * grad_x0
+
+            # Update the point in the direction of the negative momentum
+            x0 = x0 - self.lr * Vt
+
+            # Recompute the gradient at the new point
+            grad_x0 = self.num_der(f, x0, self.h)
+
+            iter_count += 1
+
+        return x0, iter_count
