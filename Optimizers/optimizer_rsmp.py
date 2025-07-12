@@ -9,66 +9,83 @@ sys.path.insert(0, parent_dir)
 
 import differentiating as diff
 
-
-class GradientDescentOptimizer:
+class RootMeanSquaredPropagadionOptimizer:
     """
-    Gradient Descent optimizer with configurable parameters.
+    Root Mean Squared Propagation optimizer with configurable parameters.
 
     Args:
         lr (float): Learning rate.
         g_tol (float): Stopping criterion for the gradient norm.
+        eps (float): hyperparameter for preventing dividing by zero.
+        beta (float): Momentum hyperparameter.
         h (float): Step size for numerical differentiation.
         num_der (Callable): Numerical differentiation method.
+
     """
+
 
     def __init__(
         self,
         lr: float,
         g_tol: float,
+        eps: float = 1e-8,
+        beta: float = 0.9,
         h: float = 0.01,
         num_der: Callable = diff.central_difference
     ) -> None:
         self.lr = lr
         self.g_tol = g_tol
+        self.eps = eps
+        self.beta = beta
         self.h = h
         self.num_der = num_der
+
 
     def optimize(
         self,
         f: Callable[[np.ndarray], float],
         x0: np.ndarray,
+        V0: np.ndarray | None = None,
         max_iter: int = 25_000
     ) -> np.ndarray:
         """
-        Perform gradient descent optimization.
+        Perform RMSProp optimization (without momentum).
 
         Args:
             f (Callable): Function to minimize.
             x0 (np.ndarray): Initial point.
+            V0 (np.ndarray or None): Initial accumulator. Default zeros.
+            max_iter (int, optional): Maximum number of iteration. Can be infinity
 
         Returns:
-            np.ndarray: The point that (approximately) minimizes the function.
+            np.ndarray: Approximate minimizer.
         """
-        # Rename the initial point
+
+        # Rename the initial point and V0 for convenience
         xk: np.ndarray = x0
+        if V0 is None:
+            Vk = np.zeros_like(x0)
+
+        # Compute the gradient at initial point
+        grad_xk: np.ndarray = self.num_der(f, xk, self.h)
 
         # Iteration counter
         i: int = 0
 
-        # Compute the gradient at the initial point
-        grad_xk: np.ndarray = self.num_der(f, xk, self.h)
-
-        # Iterate until the gradient norm is less than the tolerance
+        # Keep iterating until gradient norm is less than tolerance
         while i < max_iter and np.linalg.norm(grad_xk) > self.g_tol:
+            # Update the momentum
+            Vk: np.ndarray = self.beta * Vk + (1 - self.beta) * grad_xk**2
 
-            # Update the point in the direction of the negative gradient
-            xk = xk - self.lr * grad_xk
+            # Update the parameter
+            xk: np.ndarray = xk - self.lr * grad_xk / np.sqrt(Vk + self.eps)
 
-            # Recompute the gradient at the new point
-            grad_xk = self.num_der(f, xk, self.h)
+            # Recompute the gradient at xk
+            grad_xk: np.ndarray = self.num_der(f, xk, self.h)
 
             # Increment the counter
             i += 1
 
 
         return xk
+    

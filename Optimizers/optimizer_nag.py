@@ -15,7 +15,7 @@ class NesterovAcceleratedGradientOptimizer:
 
     Args:
         lr (float): Learning rate.
-        eps (float): Stopping criterion for the gradient norm.
+        g_tol (float): Stopping criterion for the gradient norm.
         beta (float): Momentum hyperparameter.
         h (float): Step size for numerical differentiation.
         num_der (Callable): Numerical differentiation method.
@@ -26,13 +26,13 @@ class NesterovAcceleratedGradientOptimizer:
     def __init__(
         self,
         lr: float,
-        eps: float,
+        g_tol: float,
         beta: float = 0.9,
         h: float = 0.01,
         num_der: Callable = diff.central_difference
     ) -> None:
         self.lr = lr
-        self.eps = eps
+        self.g_tol = g_tol
         self.beta = beta
         self.h = h
         self.num_der = num_der
@@ -62,10 +62,10 @@ class NesterovAcceleratedGradientOptimizer:
         yk: np.ndarray = xk_1 + self.beta*(xk_1 - xk_2)
 
         # Compute the gradient at point y(k)
-        grad_xk: np.ndarray = self.num_der(f, yk, h)
+        grad_xk: np.ndarray = self.num_der(f, yk, self.h)
 
         # Iterate until the gradient norm is less than the tolerance
-        while np.linalg.norm(grad_xk) > self.eps:
+        while np.linalg.norm(grad_xk) > self.g_tol:
             # Update the point
             xk = yk  - self.lr * grad_xk
 
@@ -77,6 +77,6 @@ class NesterovAcceleratedGradientOptimizer:
             yk = xk_1 + self.beta * (xk_1 - xk_2)
 
             # Recompute the gradient at the new point
-            grad_xk: np.ndarray = self.num_der(f, yk, h)
+            grad_xk: np.ndarray = self.num_der(f, yk, self.h)
 
         return xk_1
