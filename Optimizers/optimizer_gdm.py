@@ -41,7 +41,7 @@ class GradientDescentMomentumOptimizer:
         f: Callable[[np.ndarray], float],
         x0: np.ndarray,
         Vt: np.ndarray | None = None
-    ) -> tuple[np.ndarray, int]:
+    ) -> np.ndarray:
         """
         Perform gradient descent optimization with momentum.
 
@@ -51,29 +51,29 @@ class GradientDescentMomentumOptimizer:
             Vt (np.ndarray or None, optional): Initial momentum vector. Default is zeros.
 
         Returns:
-            tuple[np.ndarray, int]: The point that (approximately) minimizes the function and iteration count.
+            np.ndarray: The point that (approximately) minimizes the function
         """
-        iter_count: int = 1
+        # Rename the initial point
+        xk: np.ndarray = x0
 
         # Initialize momentum vector if not provided
         if Vt is None:
-            Vt = np.zeros_like(x0)
+            Vt = np.zeros_like(xk)
 
         # Compute the gradient at the initial point
-        grad_x0: np.ndarray = self.num_der(f, x0, self.h)
+        grad_xk: np.ndarray = self.num_der(f, xk, self.h)
 
         # Iterate until the gradient norm is less than the tolerance
-        while np.linalg.norm(grad_x0) > self.eps:
+        while np.linalg.norm(grad_xk) > self.eps:
 
             # Update momentum
-            Vt = self.beta * Vt + (1 - self.beta) * grad_x0
+            Vt = self.beta * Vt + (1 - self.beta) * grad_xk
 
             # Update the point in the direction of the negative momentum
-            x0 = x0 - self.lr * Vt
+            xk = xk - self.lr * Vt
 
             # Recompute the gradient at the new point
-            grad_x0 = self.num_der(f, x0, self.h)
+            grad_xk = self.num_der(f, xk, self.h)
 
-            iter_count += 1
 
-        return x0, iter_count
+        return xk

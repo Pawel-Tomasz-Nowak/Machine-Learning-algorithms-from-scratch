@@ -37,7 +37,7 @@ class GradientDescentOptimizer:
         self,
         f: Callable[[np.ndarray], float],
         x0: np.ndarray
-    ) -> tuple[np.ndarray, int]:
+    ) -> np.ndarray:
         """
         Perform gradient descent optimization.
 
@@ -46,21 +46,21 @@ class GradientDescentOptimizer:
             x0 (np.ndarray): Initial point.
 
         Returns:
-            tuple[np.ndarray, int]: The point that (approximately) minimizes the function and iteration count.
+            np.ndarray: The point that (approximately) minimizes the function.
         """
-        iter_count: int = 1
+        # Rename the initial point
+        xk: np.ndarray = x0
 
         # Compute the gradient at the initial point
-        grad_x0: np.ndarray = self.num_der(f, x0, self.h)
+        grad_xk: np.ndarray = self.num_der(f, xk, self.h)
 
         # Iterate until the gradient norm is less than the tolerance
-        while np.linalg.norm(grad_x0) > self.eps:
+        while np.linalg.norm(grad_xk) > self.eps:
 
             # Update the point in the direction of the negative gradient
-            x0 = x0 - self.lr * grad_x0
+            xk = xk - self.lr * grad_xk
 
             # Recompute the gradient at the new point
-            grad_x0 = self.num_der(f, x0, self.h)
-            iter_count += 1
+            grad_xk = self.num_der(f, xk, self.h)
 
-        return x0, iter_count
+        return xk

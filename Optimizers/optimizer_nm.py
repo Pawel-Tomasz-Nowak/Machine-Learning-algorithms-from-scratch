@@ -58,7 +58,7 @@ class NelderMeadOptimizer:
         self,
         f: Callable[[np.ndarray], float],
         x0: np.ndarray
-    ) -> tuple[np.ndarray, int]:
+    ) -> np.ndarray:
         """
         Run the Nelder-Mead simplex optimization algorithm.
 
@@ -67,14 +67,13 @@ class NelderMeadOptimizer:
             x0 (np.ndarray): Initial guess, shape (n,).
 
         Returns:
-            tuple[np.ndarray, int]: Estimated minimum point and iteration count.
+            np.ndarray: Estimated minimum point.
         """
         delta = 0.05 * np.linalg.norm(x0)
         n = x0.shape[0]
 
         # Initialize simplex: first vertex is x0, others are x0 + delta * unit vectors
         X = np.vstack([x0, x0 + delta * np.eye(n, dtype=np.float64)])
-        iter_count: int = 1
 
         while not self._stopping_condition(X):
             # Evaluate function at all simplex vertices
@@ -113,6 +112,5 @@ class NelderMeadOptimizer:
                 else:
                     X = self._update_vertices(X)
 
-            iter_count += 1
 
-        return X[0, :], iter_count
+        return X[0]
