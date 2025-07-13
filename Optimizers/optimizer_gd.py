@@ -60,7 +60,6 @@ class GradientDescentOptimizer:
 
         # Iterate until the gradient norm is less than the tolerance
         while i < max_iter and np.linalg.norm(grad_xk) > self.g_tol:
-
             # Update the point in the direction of the negative gradient
             xk = xk - self.lr * grad_xk
 

@@ -62,12 +62,12 @@ class NesterovAcceleratedGradientOptimizer:
         yk: np.ndarray = xk_1 + self.beta*(xk_1 - xk_2)
 
         # Compute the gradient at point y(k)
-        grad_xk: np.ndarray = self.num_der(f, yk, self.h)
+        grad_yk: np.ndarray = self.num_der(f, yk, self.h)
 
         # Iterate until the gradient norm is less than the tolerance
-        while np.linalg.norm(grad_xk) > self.g_tol:
+        while np.linalg.norm(grad_yk) > self.g_tol:
             # Update the point
-            xk = yk  - self.lr * grad_xk
+            xk = yk  - self.lr * grad_yk
 
             # Update x(k-1) and x(k-2)
             xk_2 = xk_1
@@ -77,6 +77,6 @@ class NesterovAcceleratedGradientOptimizer:
             yk = xk_1 + self.beta * (xk_1 - xk_2)
 
             # Recompute the gradient at the new point
-            grad_xk: np.ndarray = self.num_der(f, yk, self.h)
+            grad_yk: np.ndarray = self.num_der(f, yk, self.h)
 
         return xk_1

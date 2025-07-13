@@ -62,30 +62,31 @@ class RootMeanSquaredPropagadionOptimizer:
         """
 
         # Rename the initial point and V0 for convenience
-        xk: np.ndarray = x0
+        xt: np.ndarray = x0
+
         if V0 is None:
-            Vk = np.zeros_like(x0)
+            Vt = np.zeros_like(xt)
 
         # Compute the gradient at initial point
-        grad_xk: np.ndarray = self.num_der(f, xk, self.h)
+        grad_xt: np.ndarray = self.num_der(f, xt, self.h)
 
         # Iteration counter
         i: int = 0
 
         # Keep iterating until gradient norm is less than tolerance
-        while i < max_iter and np.linalg.norm(grad_xk) > self.g_tol:
-            # Update the momentum
-            Vk: np.ndarray = self.beta * Vk + (1 - self.beta) * grad_xk**2
+        while i < max_iter and np.linalg.norm(grad_xt) > self.g_tol:
+            # Update the accumulator
+            Vt: np.ndarray = self.beta * Vt + (1 - self.beta) * grad_xt**2
 
             # Update the parameter
-            xk: np.ndarray = xk - self.lr * grad_xk / np.sqrt(Vk + self.eps)
+            xt: np.ndarray = xt - self.lr * grad_xt / np.sqrt(Vt + self.eps)
 
             # Recompute the gradient at xk
-            grad_xk: np.ndarray = self.num_der(f, xk, self.h)
+            grad_xt: np.ndarray = self.num_der(f, xt, self.h)
 
             # Increment the counter
             i += 1
 
 
-        return xk
+        return xt
     
