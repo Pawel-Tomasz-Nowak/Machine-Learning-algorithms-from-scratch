@@ -42,6 +42,8 @@ class NesterovAcceleratedGradientOptimizer:
         self,
         f: Callable[[np.ndarray], float],
         x0: np.ndarray,
+        M0: np.ndarray | None = None,
+        max_iter: int = 25_000
     ) -> np.ndarray:
         """
         Perform Nesterov accerelated gradient descent optimization with momentum.
@@ -49,34 +51,39 @@ class NesterovAcceleratedGradientOptimizer:
         Args:
             f (Callable): Function to minimize.
             x0 (np.ndarray): Initial point.
+            M0 (np.ndarray or None, optional): Initial momentum vector. Default is zeros.
+            max_iter (int, optional): Maximum number of iteration. Can be infinity
 
         Returns:
             np.ndarray: The point that (approximately) minimizes the function
         """
+        # Initialize iteration counter
+        i: int = 0
 
-        # Initialize points x(k-1) and x(k-2)
-        xk_1: np.ndarray = x0
-        xk_2: np.ndarray = x0
+        # Initialize point x(t)
+        xt: np.ndarray = x0
 
-        # Find point y(k)
-        yk: np.ndarray = xk_1 + self.beta*(xk_1 - xk_2)
+        # Initialize momentum vector if not provided
+        if M0 is None:
+            Mt = np.zeros_like(xt)
 
-        # Compute the gradient at point y(k)
-        grad_yk: np.ndarray = self.num_der(f, yk, self.h)
+        # Compute the gradient at point x(k) + beta*M(k)
+        curr_grad: np.ndarray = self.num_der(f, xt + self.beta*Mt, self.h)
 
         # Iterate until the gradient norm is less than the tolerance
-        while np.linalg.norm(grad_yk) > self.g_tol:
-            # Update the point
-            xk = yk  - self.lr * grad_yk
+        while i < max_iter and np.linalg.norm(curr_grad) > self.g_tol:
+            # Update the parameter
+            xt: np.ndarray = xt + Mt
+        
 
-            # Update x(k-1) and x(k-2)
-            xk_2 = xk_1
-            xk_1 = xk
+            # Recompute the gradient 
+            curr_grad: np.ndarray = self.num_der(f, xt + self.beta*Mt)
+            
+            # Recompute the moment 
+            Mt: np.ndarray = self.beta * Mt - self.lr * curr_grad
 
-            # Compute the new y(k)
-            yk = xk_1 + self.beta * (xk_1 - xk_2)
 
-            # Recompute the gradient at the new point
-            grad_yk: np.ndarray = self.num_der(f, yk, self.h)
+            # Increment the counter
+            i += 1
 
-        return xk_1
+        return xt

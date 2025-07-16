@@ -79,7 +79,7 @@ class RootMeanSquaredPropagadionOptimizer:
             Vt: np.ndarray = self.beta * Vt + (1 - self.beta) * grad_xt**2
 
             # Update the parameter
-            xt: np.ndarray = xt - self.lr * grad_xt / np.sqrt(Vt + self.eps)
+            xt: np.ndarray = xt - self.lr * grad_xt / (np.sqrt(Vt) + self.eps)
 
             # Recompute the gradient at xk
             grad_xt: np.ndarray = self.num_der(f, xt, self.h)

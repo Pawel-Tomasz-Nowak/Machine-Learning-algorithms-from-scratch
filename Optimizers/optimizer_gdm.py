@@ -71,8 +71,6 @@ class GradientDescentMomentumOptimizer:
 
         # Iterate until the gradient norm is less than the tolerance
         while i < max_iter and np.linalg.norm(grad_xt) > self.g_tol:
-            print(xt)
-
             # Update momentum
             Mt = self.beta * Mt + (1 - self.beta) * grad_xt
 
