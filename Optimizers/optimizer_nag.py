@@ -26,7 +26,7 @@ class NesterovAcceleratedGradientOptimizer:
     def __init__(
         self,
         lr: float,
-        g_tol: float,
+        g_tol: float = 1e-4,
         beta: float = 0.9,
         h: float = 0.01,
         num_der: Callable = diff.central_difference
@@ -77,7 +77,7 @@ class NesterovAcceleratedGradientOptimizer:
         
 
             # Recompute the gradient 
-            curr_grad: np.ndarray = self.num_der(f, xt + self.beta*Mt)
+            curr_grad: np.ndarray = self.num_der(f, xt + self.beta*Mt, self.h)
             
             # Recompute the moment 
             Mt: np.ndarray = self.beta * Mt - self.lr * curr_grad
@@ -85,5 +85,6 @@ class NesterovAcceleratedGradientOptimizer:
 
             # Increment the counter
             i += 1
+
 
         return xt

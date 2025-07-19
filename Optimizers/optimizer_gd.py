@@ -24,7 +24,7 @@ class GradientDescentOptimizer:
     def __init__(
         self,
         lr: float,
-        g_tol: float,
+        g_tol: float = 1e-4,
         h: float = 0.01,
         num_der: Callable = diff.central_difference
     ) -> None:

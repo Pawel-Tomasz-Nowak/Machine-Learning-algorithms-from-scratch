@@ -25,7 +25,7 @@ class GradientDescentMomentumOptimizer:
     def __init__(
         self,
         lr: float,
-        g_tol: float,
+        g_tol: float = 1e-4,
         beta: float = 0.9,
         h: float = 0.01,
         num_der: Callable = diff.central_difference
@@ -82,5 +82,6 @@ class GradientDescentMomentumOptimizer:
 
             # Increment the counter
             i += 1
+
 
         return xt
