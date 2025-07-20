@@ -49,17 +49,17 @@ class GradientDescentOptimizer:
         Returns:
             np.ndarray: The point that (approximately) minimizes the function.
         """
-        # Rename the initial point
-        xt: np.ndarray = x0
+        # Rename the initial point for convenience
+        xt: np.ndarray = x0.copy()
 
         # Iteration counter
-        i: int = 0
+        t: int = 0
 
         # Compute the gradient at the initial point
         grad_xt: np.ndarray = self.num_der(f, xt, self.h)
 
         # Iterate until the gradient norm is less than the tolerance
-        while i < max_iter and np.linalg.norm(grad_xt) > self.g_tol:
+        while t < max_iter and np.linalg.norm(grad_xt) > self.g_tol:
             # Update the point in the direction of the negative gradient
             xt = xt - self.lr * grad_xt
 
@@ -67,7 +67,7 @@ class GradientDescentOptimizer:
             grad_xt = self.num_der(f, xt, self.h)
 
             # Increment the counter
-            i += 1
+            t += 1
 
 
         return xt

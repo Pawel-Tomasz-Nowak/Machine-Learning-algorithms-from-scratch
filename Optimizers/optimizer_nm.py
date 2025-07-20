@@ -22,7 +22,7 @@ class NelderMeadOptimizer:
     def __init__(
         self,
         eps: float,
-        norm: Callable[[np.ndarray], float] = dist_measures.Euclidean_distance
+        norm: Callable[[np.ndarray, np.ndarray], float] = dist_measures.Euclidean_distance
     ) -> None:
         self.eps = eps
         self.norm = norm

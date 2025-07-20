@@ -9,15 +9,15 @@ sys.path.insert(0, parent_dir)
 
 import differentiating as diff
 
-class RootMeanSquaredPropagadionOptimizer:
+class AdamOptimizer:
     """
-    Root Mean Squared Propagation optimizer with configurable parameters.
+    Adam optimizer with configurable parameters.
 
     Args:
         lr (float): Learning rate.
+        beta1, beta2 (float): Hyperparameters for momentum and accumulator respectively
         g_tol (float): Stopping criterion for the gradient norm.
         eps (float): hyperparameter for preventing dividing by zero.
-        beta (float): Momentum hyperparameter.
         h (float): Step size for numerical differentiation.
         num_der (Callable): Numerical differentiation method.
 
@@ -27,16 +27,18 @@ class RootMeanSquaredPropagadionOptimizer:
     def __init__(
         self,
         lr: float,
+        beta1: float = 0.9,
+        beta2: float = 0.999,
         g_tol: float = 1e-4,
         eps: float = 1e-8,
-        beta: float = 0.9,
         h: float = 0.01,
         num_der: Callable = diff.central_difference
     ) -> None:
         self.lr = lr
+        self.beta1 = beta1
+        self.beta2 = beta2
         self.g_tol = g_tol
         self.eps = eps
-        self.beta = beta
         self.h = h
         self.num_der = num_der
 
@@ -45,15 +47,17 @@ class RootMeanSquaredPropagadionOptimizer:
         self,
         f: Callable[[np.ndarray], float],
         x0: np.ndarray,
+        M0: np.ndarray | None = None,
         V0: np.ndarray | None = None,
         max_iter: int = 25_000
     ) -> np.ndarray:
         """
-        Perform RMSProp optimization (without momentum).
+        Perform Adam optimization
 
         Args:
             f (Callable): Function to minimize.
             x0 (np.ndarray): Initial point.
+            M0 (np.ndarray or None): Initial momentum. Default zeros.
             V0 (np.ndarray or None): Initial accumulator. Default zeros.
             max_iter (int, optional): Maximum number of iteration. Can be infinity
 
@@ -61,30 +65,35 @@ class RootMeanSquaredPropagadionOptimizer:
             np.ndarray: Approximate minimizer.
         """
         # Rename the initial point for convenience
-        xt: np.ndarray = x0
+        xt: np.ndarray = x0.copy()
 
+        # Initialize Mt and Vt
+        Mt: np.ndarray = np.zeros_like(xt) if M0 is None else M0.copy()
         Vt: np.ndarray = np.zeros_like(xt) if V0 is None else V0.copy()
 
-        # Iteration counter
+        # Initialize the iteration counter
         t: int = 0
 
-        # Compute the gradient at initial point
-        grad_xt: np.ndarray = self.num_der(f, xt, self.h)
+        # Compute the gradient at xt (x0)
+        curr_grad: np.ndarray = self.num_der(f, xt, self.h)
 
-     
-        # Keep iterating until gradient norm is less than tolerance
-        while t < max_iter and np.linalg.norm(grad_xt) > self.g_tol:
-            # Update the accumulator
-            Vt: np.ndarray = self.beta * Vt + (1 - self.beta) * grad_xt**2
+        # Keep iterating until exceeding max_iter or the gradient norm is small enough
+        while t < max_iter and np.linalg.norm(curr_grad) > self.g_tol:
+            # Compute m(t+1) and v(t+1)
+            Mt: np.ndarray = self.beta1*Mt + (1-self.beta1)*curr_grad
+            Vt: np.ndarray = self.beta2*Vt + (1-self.beta2)*curr_grad**2
+
+            # Rescale m(t+1) and v(t+1)
+            Mt_hat: np.ndarray = Mt/(1-self.beta1**(t+1))
+            Vt_hat: np.ndarray = Vt/(1-self.beta2**(t+1))
 
             # Update the parameter
-            xt: np.ndarray = xt - self.lr * grad_xt / (np.sqrt(Vt) + self.eps)
+            xt: np.ndarray = xt - self.lr/(self.eps + np.sqrt(Vt_hat))*Mt_hat
 
-            # Recompute the gradient at xk
-            grad_xt: np.ndarray = self.num_der(f, xt, self.h)
+            # Recompute gradient
+            curr_grad: np.ndarray = self.num_der(f, xt, self.h)
 
             # Increment the counter
             t += 1
-
 
         return xt

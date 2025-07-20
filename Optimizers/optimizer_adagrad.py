@@ -11,7 +11,7 @@ import differentiating as diff
 
 class AdaGradOptimizer:
     """
-    Root Mean Squared Propagation optimizer with configurable parameters.
+    AdaGrad optimizer with configurable parameters.
 
     Args:
         lr (float): Learning rate.
@@ -46,7 +46,7 @@ class AdaGradOptimizer:
         max_iter: int = 25_000
     ) -> np.ndarray:
         """
-        Perform RMSProp optimization (without momentum).
+        Perform AdaGrad optimization
 
         Args:
             f (Callable): Function to minimize.
@@ -57,20 +57,19 @@ class AdaGradOptimizer:
         Returns:
             np.ndarray: Approximate minimizer.
         """
-
-        # Rename the initial point and V0 for convenience
+        # Rename the initial point for convenience
         xt: np.ndarray = x0
 
         # Initialize Vt if not given
         Vt = np.zeros_like(xt) if V0 is None else V0
         
         # Initialize iteration counter
-        iter_counter: int = 0
+        t: int = 0
 
         # Compute the gradient at x0
         curr_grad: np.ndarray = self.num_der(f, xt, self.h)
 
-        while iter_counter < max_iter and np.linalg.norm(curr_grad) > self.g_tol:
+        while t < max_iter and np.linalg.norm(curr_grad) > self.g_tol:
             # Recompute the accumulator
             Vt: np.ndarray = Vt + curr_grad**2
 
@@ -81,8 +80,7 @@ class AdaGradOptimizer:
             curr_grad: np.ndarray = self.num_der(f, xt, self.h)
 
             # Increment the counter
-            iter_counter += 1
+            t += 1
 
 
         return xt
-    

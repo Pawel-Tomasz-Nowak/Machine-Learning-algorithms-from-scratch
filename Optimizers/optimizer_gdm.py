@@ -52,25 +52,23 @@ class GradientDescentMomentumOptimizer:
             M0 (np.ndarray or None, optional): Initial momentum vector. Default is zeros.
             max_iter (int, optional): Maximum number of iteration. Can be infinity
 
-
         Returns:
             np.ndarray: The point that (approximately) minimizes the function
         """
-        # Rename the initial point and momentum vector
-        xt: np.ndarray = x0
+        # Rename the initial point
+        xt: np.ndarray = x0.copy()
 
         # Initialize momentum vector if not provided
-        if M0 is None:
-            Mt = np.zeros_like(xt)
+        Mt: np.ndarray = np.zeros_like(xt) if M0 is None else M0.copy()
 
         # Iteration counter
-        i: int = 0
+        t: int = 0
 
         # Compute the gradient at the initial point
         grad_xt: np.ndarray = self.num_der(f, xt, self.h)
 
         # Iterate until the gradient norm is less than the tolerance
-        while i < max_iter and np.linalg.norm(grad_xt) > self.g_tol:
+        while t < max_iter and np.linalg.norm(grad_xt) > self.g_tol:
             # Update momentum
             Mt = self.beta * Mt + (1 - self.beta) * grad_xt
 
@@ -81,7 +79,7 @@ class GradientDescentMomentumOptimizer:
             grad_xt = self.num_der(f, xt, self.h)
 
             # Increment the counter
-            i += 1
+            t += 1
 
 
         return xt
