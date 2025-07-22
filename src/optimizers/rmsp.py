@@ -1,22 +1,23 @@
-import numpy as np
-import os
 import sys
+import os
+import numpy as np
 from typing import Callable
 
-# Add parent directory to sys.path to allow importing modules from parent
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, parent_dir)
+# Add the 'src' directory to the system path to allow imports from sibling packages
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import differentiating as diff
+# Import the differentiation module from the core package
+import core.differentiation as diff
 
-class AdaGradOptimizer:
+class RootMeanSquaredPropagadionOptimizer:
     """
-    AdaGrad optimizer with configurable parameters.
+    Root Mean Squared Propagation optimizer with configurable parameters.
 
     Args:
         lr (float): Learning rate.
         g_tol (float): Stopping criterion for the gradient norm.
         eps (float): hyperparameter for preventing dividing by zero.
+        beta (float): Momentum hyperparameter.
         h (float): Step size for numerical differentiation.
         num_der (Callable): Numerical differentiation method.
 
@@ -28,12 +29,14 @@ class AdaGradOptimizer:
         lr: float,
         g_tol: float = 1e-4,
         eps: float = 1e-8,
+        beta: float = 0.9,
         h: float = 0.01,
         num_der: Callable = diff.central_difference
     ) -> None:
         self.lr = lr
         self.g_tol = g_tol
         self.eps = eps
+        self.beta = beta
         self.h = h
         self.num_der = num_der
 
@@ -46,7 +49,7 @@ class AdaGradOptimizer:
         max_iter: int = 25_000
     ) -> np.ndarray:
         """
-        Perform AdaGrad optimization
+        Perform RMSProp optimization (without momentum).
 
         Args:
             f (Callable): Function to minimize.
@@ -60,24 +63,25 @@ class AdaGradOptimizer:
         # Rename the initial point for convenience
         xt: np.ndarray = x0
 
-        # Initialize Vt if not given
-        Vt = np.zeros_like(xt) if V0 is None else V0
-        
-        # Initialize iteration counter
+        Vt: np.ndarray = np.zeros_like(xt) if V0 is None else V0.copy()
+
+        # Iteration counter
         t: int = 0
 
-        # Compute the gradient at x0
-        curr_grad: np.ndarray = self.num_der(f, xt, self.h)
+        # Compute the gradient at initial point
+        grad_xt: np.ndarray = self.num_der(f, xt, self.h)
 
-        while t < max_iter and np.linalg.norm(curr_grad) > self.g_tol:
-            # Recompute the accumulator
-            Vt: np.ndarray = Vt + curr_grad**2
+     
+        # Keep iterating until gradient norm is less than tolerance
+        while t < max_iter and np.linalg.norm(grad_xt) > self.g_tol:
+            # Update the accumulator
+            Vt: np.ndarray = self.beta * Vt + (1 - self.beta) * grad_xt**2
 
-            # Upgrade the parameter
-            xt: np.ndarray = xt - self.lr/(self.eps + np.sqrt(Vt))*curr_grad
+            # Update the parameter
+            xt: np.ndarray = xt - self.lr * grad_xt / (np.sqrt(Vt) + self.eps)
 
-            # Update the gradient
-            curr_grad: np.ndarray = self.num_der(f, xt, self.h)
+            # Recompute the gradient at xk
+            grad_xt: np.ndarray = self.num_der(f, xt, self.h)
 
             # Increment the counter
             t += 1

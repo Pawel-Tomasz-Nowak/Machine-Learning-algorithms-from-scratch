@@ -1,13 +1,14 @@
-import os
 import sys
+import os
 import numpy as np
 from typing import Callable
 
-# Add a path to a directory with distance_measures module
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '../..'))
-sys.path.insert(0, parent_dir)
+# Add the 'src' directory to the system path to allow imports from sibling packages
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import distance_measures as measures
+# Import the differentiation module from the core package
+import core.distance_measures as measures
+
 
 class KMeans:
     """

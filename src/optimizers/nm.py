@@ -1,13 +1,13 @@
-import numpy as np
-import os
 import sys
+import os
+import numpy as np
 from typing import Callable
 
-# Add parent directory to sys.path to allow importing modules from parent
-parent_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.insert(0, parent_dir)
+# Add the 'src' directory to the system path to allow imports from sibling packages
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-import distance_measures as dist_measures
+# Import the differentiation module from the core package
+import core.distance_measures as measures
 
 
 class NelderMeadOptimizer:
@@ -22,7 +22,7 @@ class NelderMeadOptimizer:
     def __init__(
         self,
         eps: float,
-        norm: Callable[[np.ndarray, np.ndarray], float] = dist_measures.Euclidean_distance
+        norm: Callable[[np.ndarray, np.ndarray], float] = measures.Euclidean_distance
     ) -> None:
         self.eps = eps
         self.norm = norm
