@@ -13,6 +13,7 @@ class BaseModel(ABC):
         Initialize the base model.
         """
         self.model: BaseModel = self
+        self.is_fit: bool = False
 
     @abstractmethod
     def fit(self, X: np.ndarray, y: np.ndarray) -> None:
