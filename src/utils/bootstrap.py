@@ -1,6 +1,19 @@
 import numpy as np
 from typing import Callable, Union
 
+
+def validate_fraction(frac: float) -> None:
+    """
+    Validate that the fraction is in the interval (0, 1].
+
+    Args:
+        frac (float): Fraction to validate.
+
+    Raises:
+        AssertionError: If frac is not in (0, 1].
+    """
+    assert 0 < frac <= 1, "Fraction should be in (0; 1] interval"
+
 def bootstrap_mean(
     f: Callable[[np.ndarray], Union[np.ndarray, float]],
     X: np.ndarray,
