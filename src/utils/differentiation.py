@@ -18,13 +18,12 @@ def forward_difference(
     Returns:
         np.ndarray: Approximated gradient vector.
     """
-    n = x0.shape[0]
-    gradient = np.zeros(n, np.float64)
+    gradient = np.zeros_like(x0)
 
-    for i in range(n):
-        offset = np.zeros(n, np.float64)
-        offset[i] = h
-        gradient[i] = (f(x0 + offset) - f(x0)) / h
+    for idx in np.ndindex(x0.shape):
+        offset = np.zeros_like(x0)
+        offset[idx] = h
+        gradient[idx] = (f(x0 + offset) - f(x0)) / h
 
     return gradient
 
@@ -72,13 +71,12 @@ def central_difference(
     Returns:
         np.ndarray: Approximated gradient vector.
     """
-    n = x0.shape[0]
-    gradient = np.zeros(n, np.float64)
+    gradient = np.zeros_like(x0, np.float64)
 
-    for i in range(n):
-        offset = np.zeros(n, np.float64)
-        offset[i] = h
-        gradient[i] = (f(x0 + offset) - f(x0 - offset)) / (2 * h)
+    for idx in np.ndindex(x0.shape):
+        offset = np.zeros_like(x0, np.float64)
+        offset[idx] = h
+        gradient[idx] = (f(x0 + offset) - f(x0 - offset)) / (2 * h)
 
     return gradient
 
@@ -99,24 +97,23 @@ def five_point_central_difference(
     Returns:
         np.ndarray: Approximated gradient vector.
     """
-    n = x0.shape[0]
-    gradient = np.zeros(n, np.float64)
+    gradient = np.zeros_like(x0, np.float64)
 
-    for i in range(n):
-        offset = np.zeros(n, np.float64)
+    for idx in np.ndindex(x0.shape):
+        offset = np.zeros_like(x0, np.float64)
 
-        offset[i] = 2 * h
+        offset[idx] = 2 * h
         val1 = f(x0 + offset)
 
-        offset[i] = h
+        offset[idx] = h
         val2 = f(x0 + offset)
 
-        offset[i] = -h
+        offset[idx] = -h
         val3 = f(x0 + offset)
 
-        offset[i] = -2 * h
+        offset[idx] = -2 * h
         val4 = f(x0 + offset)
 
-        gradient[i] = (-val1 + 8 * val2 - 8 * val3 + val4) / (12 * h)
+        gradient[idx] = (-val1 + 8 * val2 - 8 * val3 + val4) / (12 * h)
 
     return gradient
