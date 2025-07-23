@@ -1,78 +1,78 @@
 import numpy as np
-from typing import Callable
+from typing import Callable, Union
 
-
-def bootstrap_mean(f: Callable[[np.ndarray], np.ndarray], X: np.ndarray, boot_n:int, frac:float = 1) -> np.ndarray:
+def bootstrap_mean(
+    f: Callable[[np.ndarray], Union[np.ndarray, float]],
+    X: np.ndarray,
+    boot_n: int,
+    frac: float = 1.0
+) -> Union[np.ndarray, float]:
     """
-    Performs bootstrap mean estimation of `f` based on `X` array
-    By default, all bootstrap samples are of sized n, where n = X.shape[0], however this could be any fraction denoted by `frac`,
-    of n
+    Estimate the mean of a statistic using the bootstrap method.
 
     Args:
-        f (Callable[[np.ndarray], np.ndarray]): a statistics to be estimated
-        X (np.ndarray): a dataset
-        boot_n (int): a number of bootstrap replications
-        frac (float): a fraction of rows determining the size of each bootstrap sample
+        f (Callable[[np.ndarray], Union[np.ndarray, float]]): Statistic function to estimate.
+        X (np.ndarray): Dataset.
+        boot_n (int): Number of bootstrap replications.
+        frac (float, optional): Fraction of rows for each bootstrap sample. Default is 1.0.
+
+    Returns:
+        Union[np.ndarray, float]: Bootstrap mean estimate of the statistic.
     """
-    n: int = X.shape[0] # Number of observations
+    n: int = X.shape[0]
+    boot_size: int = int(frac * n)
+    boot_samples: np.ndarray = np.random.choice(n, [boot_n, boot_size], replace=True)
+    estimates: np.ndarray = np.apply_along_axis(lambda idxs: f(X[idxs]), axis=1, arr=boot_samples)
+    return np.mean(estimates, axis=0)
 
-    boot_size: int = int(frac * n) # A size of each bootstrap replication
-
-
-    boot_samples:np.ndarray = np.random.choice(n, [boot_n, boot_size], replace = True)
-
-    estimates: np.ndarray = np.apply_along_axis(lambda idxs:    f(X[idxs]), axis = 1, arr = boot_samples)
-
-
-    return np.mean(estimates, axis = 0)
-
-
-def bootstrap_se(f: Callable[[np.ndarray], np.ndarray], X: np.ndarray, boot_n:int, frac:float = 1) -> np.ndarray:
+def bootstrap_se(
+    f: Callable[[np.ndarray], Union[np.ndarray, float]],
+    X: np.ndarray,
+    boot_n: int,
+    frac: float = 1.0
+) -> Union[np.ndarray, float]:
     """
-    Performs bootstrap standard error estimation of `f` based on `X` array
-    By default, all bootstrap samples are of sized n, where n = X.shape[0], however this could be any fraction denoted by `frac`,
-    of n
+    Estimate the standard error of a statistic using the bootstrap method.
 
     Args:
-        f (Callable[[np.ndarray], np.ndarray]): a statistics to be estimated
-        X (np.ndarray): a dataset
-        boot_n (int): a number of bootstrap replications
-        frac (float): a fraction of rows determining the size of each bootstrap sample
+        f (Callable[[np.ndarray], Union[np.ndarray, float]]): Statistic function to estimate.
+        X (np.ndarray): Dataset.
+        boot_n (int): Number of bootstrap replications.
+        frac (float, optional): Fraction of rows for each bootstrap sample. Default is 1.0.
+
+    Returns:
+        Union[np.ndarray, float]: Bootstrap standard error estimate of the statistic.
     """
-    n: int = X.shape[0] # Number of observations
-
-    boot_size: int = int(frac * n) # A size of each bootstrap replication
-
-
-    boot_samples:np.ndarray = np.random.choice(n, [boot_n, boot_size], replace = True)
-
-    estimates: np.ndarray = np.apply_along_axis(lambda idxs:    f(X[idxs]), axis = 1, arr = boot_samples)
-
-
+    n: int = X.shape[0]
+    boot_size: int = int(frac * n)
+    boot_samples: np.ndarray = np.random.choice(n, [boot_n, boot_size], replace=True)
+    estimates: np.ndarray = np.apply_along_axis(lambda idxs: f(X[idxs]), axis=1, arr=boot_samples)
     return np.std(estimates, axis=0, ddof=1)
 
-
-def bootstrap_ci(f: Callable[[np.ndarray], np.ndarray], X: np.ndarray, boot_n:int, q1:float, q2:float, frac:float = 1) -> np.ndarray:
+def bootstrap_ci(
+    f: Callable[[np.ndarray], Union[np.ndarray, float]],
+    X: np.ndarray,
+    boot_n: int,
+    q1: float,
+    q2: float,
+    frac: float = 1.0
+) -> Union[np.ndarray, float]:
     """
-    Performs bootstrap quantile estimation of `f` based on `X` array for confidence interval
-    By default, all bootstrap samples are of sized n, where n = X.shape[0], however this could be any fraction denoted by `frac`,
-    of n
+    Estimate confidence interval quantiles of a statistic using the bootstrap method.
 
     Args:
-        f (Callable[[np.ndarray], np.ndarray]): a statistics to be estimated
-        X (np.ndarray): a dataset
-        boot_n (int): a number of bootstrap replications
-        q1, q2 (float): a quantiles for the confidence interval
-        frac (float): a fraction of rows determining the size of each bootstrap sample
+        f (Callable[[np.ndarray], Union[np.ndarray, float]]): Statistic function to estimate.
+        X (np.ndarray): Dataset.
+        boot_n (int): Number of bootstrap replications.
+        q1 (float): Lower quantile for the confidence interval (e.g., 2.5).
+        q2 (float): Upper quantile for the confidence interval (e.g., 97.5).
+        frac (float, optional): Fraction of rows for each bootstrap sample. Default is 1.0.
+
+    Returns:
+        Union[np.ndarray, float]: Lower and upper quantiles of the bootstrap statistic.
     """
-    n: int = X.shape[0] # Number of observations
-
-    boot_size: int = int(frac * n) # A size of each bootstrap replication
-
-
-    boot_samples:np.ndarray = np.random.choice(n, [boot_n, boot_size], replace = True)
-
-    estimates: np.ndarray = np.apply_along_axis(lambda idxs:    f(X[idxs]), axis = 1, arr = boot_samples)
-
-
+    n: int = X.shape[0]
+    boot_size: int = int(frac * n)
+    boot_samples: np.ndarray = np.random.choice(n, [boot_n, boot_size], replace=True)
+    estimates: np.ndarray = np.apply_along_axis(lambda idxs: f(X[idxs]), axis=1, arr=boot_samples)
     return np.percentile(estimates, [q1, q2], axis=0)

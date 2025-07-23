@@ -7,7 +7,7 @@ from typing import Callable
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import the differentiation module from the core package
-import core.differentiation as diff
+import utils.differentiation as diff
 
 class RootMeanSquaredPropagadionOptimizer:
     """

@@ -7,7 +7,7 @@ from typing import Callable
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 # Import the differentiation module from the core package
-import core.distance_measures as measures
+import utils.distance_measures as measures
 
 
 class KMeans:
