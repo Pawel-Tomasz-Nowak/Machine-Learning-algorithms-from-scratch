@@ -4,13 +4,15 @@ import os
 
 # Ensure the parent directory is in sys.path for imports
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', "..")))
+
+from typing import Callable, Optional
+from functools import partial
 
 from core.base_model import BaseModel
 from utils.loss import L2
 from optimizers.adam import AdamOptimizer
-
-from typing import Callable, Optional
-from functools import partial
+import tests.unit_tests as unitests
 
 class LinearRegression(BaseModel):
     """
@@ -20,6 +22,7 @@ class LinearRegression(BaseModel):
         loss (Callable): Loss function to use (default: L2).
         loss_params (Optional[dict]): Parameters for the loss function.
         reg (Callable): Regularization function (default: no penalty).
+        reg_params (Optional[dict]): Parameters for the regularization function.
     """
 
     def __init__(
@@ -32,9 +35,10 @@ class LinearRegression(BaseModel):
         super().__init__()
         self.loss: Callable = loss
         self.loss_params: dict = loss_params or {}
-
         self.reg: Callable = reg
         self.reg_params: dict = reg_params or {}
+
+        self.is_fit: bool = False
 
     def _loss_function(
         self,
@@ -90,7 +94,7 @@ class LinearRegression(BaseModel):
 
         # Add intercept column to X
         one_col: np.ndarray = np.ones((n, 1), dtype=np.float32)
-        X_exp: np.ndarray = np.concatenate([one_col, X], axis=1) #exp stands for expanded
+        X_exp: np.ndarray = np.concatenate([one_col, X], axis=1)  # expanded X
 
         # Prepare optimizer
         optimizer_params = optimizer_params or {}
@@ -106,29 +110,28 @@ class LinearRegression(BaseModel):
         self.coefficient_: np.ndarray = coefficient
 
         return coefficient
-    
+
     def predict(self, X: np.ndarray) -> np.ndarray:
         """
         Predict target values for given input data.
-    
+
         Args:
             X (np.ndarray): Feature matrix, shape (n, p).
-    
+
         Returns:
             np.ndarray: Predicted target values, shape (n, m).
-    
+
         Raises:
-            RuntimeError: If the model is not fitted yet.
-            ValueError: If the dimensionality of X does not match the model.
+            AssertionError: If the model is not fitted or X has wrong shape/type.
         """
-        if not self.is_fit:
-            raise RuntimeError("The model is not fitted yet. Call 'fit' before 'predict'.")
-        if X.shape[1] != self.p:
-            raise ValueError(f"The dimensionality of X ({X.shape[1]}) does not match the model ({self.p}).")
-    
+        # Use unit tests for validation
+        unitests.assert_fitted(self.is_fit)
+        unitests.assert_ndim(X, 2)
+        unitests.assert_feature_count(X, self.p)
+
         n: int = X.shape[0]
         one_col: np.ndarray = np.ones((n, 1), dtype=np.float32)
         X_exp: np.ndarray = np.concatenate([one_col, X], axis=1)
         y_pred: np.ndarray = X_exp @ self.coefficient_
-    
+
         return y_pred

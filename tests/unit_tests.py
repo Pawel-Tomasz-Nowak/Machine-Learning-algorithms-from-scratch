@@ -10,6 +10,7 @@ def assert_ndim(x: np.ndarray, ndim: int = 2) -> None:
     """
     Assert that x has the specified number of dimensions.
     """
+    assert_is_ndarray(x)
     assert x.ndim == ndim, f"Array must be {ndim}-dimensional"
 
 def assert_1d_same_length(x1: np.ndarray, x2: np.ndarray) -> None:
@@ -40,3 +41,7 @@ def assert_feature_count(x: np.ndarray, p: int) -> None:
     assert_is_ndarray(x)
     assert_ndim(x, 2)
     assert x.shape[1] == p, f"Array must have exactly {p} features"
+
+
+def assert_fitted(is_fit:bool) -> None:
+    assert is_fit, "The object isn't fitted yet"

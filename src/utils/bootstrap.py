@@ -32,6 +32,8 @@ def bootstrap_mean(
     Returns:
         Union[np.ndarray, float]: Bootstrap mean estimate of the statistic.
     """
+    validate_fraction(frac)
+
     n: int = X.shape[0]
     boot_size: int = int(frac * n)
     boot_samples: np.ndarray = np.random.choice(n, [boot_n, boot_size], replace=True)
@@ -56,6 +58,8 @@ def bootstrap_se(
     Returns:
         Union[np.ndarray, float]: Bootstrap standard error estimate of the statistic.
     """
+    validate_fraction(frac)
+
     n: int = X.shape[0]
     boot_size: int = int(frac * n)
     boot_samples: np.ndarray = np.random.choice(n, [boot_n, boot_size], replace=True)
@@ -84,6 +88,8 @@ def bootstrap_ci(
     Returns:
         Union[np.ndarray, float]: Lower and upper quantiles of the bootstrap statistic.
     """
+    validate_fraction(frac)
+
     n: int = X.shape[0]
     boot_size: int = int(frac * n)
     boot_samples: np.ndarray = np.random.choice(n, [boot_n, boot_size], replace=True)
