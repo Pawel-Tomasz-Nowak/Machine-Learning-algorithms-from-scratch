@@ -11,7 +11,7 @@ def forward_difference(
     Compute the gradient of f at x0 using the forward difference method.
 
     Args:
-        f (Callable[[np.ndarray], float]): Function to differentiate.
+        f (Callable): Function to differentiate.
         x0 (np.ndarray): Point at which to compute the gradient.
         h (float): Step size.
 
@@ -37,7 +37,7 @@ def backward_difference(
     Compute the gradient of f at x0 using the backward difference method.
 
     Args:
-        f (Callable[[np.ndarray], float]): Function to differentiate.
+        f (Callable): Function to differentiate.
         x0 (np.ndarray): Point at which to compute the gradient.
         h (float): Step size.
 
@@ -64,7 +64,7 @@ def central_difference(
     Compute the gradient of f at x0 using the central difference method.
 
     Args:
-        f (Callable[[np.ndarray], float]): Function to differentiate.
+        f (Callable): Function to differentiate.
         x0 (np.ndarray): Point at which to compute the gradient.
         h (float): Step size.
 
@@ -90,7 +90,7 @@ def five_point_central_difference(
     Compute the gradient of f at x0 using the five-point central difference method.
 
     Args:
-        f (Callable[[np.ndarray], float]): Function to differentiate.
+        f (Callable): Function to differentiate.
         x0 (np.ndarray): Point at which to compute the gradient.
         h (float): Step size.
 

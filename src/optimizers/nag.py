@@ -6,23 +6,20 @@ from typing import Callable
 # Add the 'src' directory to the system path to allow imports from sibling packages
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Import the differentiation module from the core package
 import utils.differentiation as diff
 
 
 class NesterovAcceleratedGradientOptimizer:
     """
-    Nesterov Accelerated Gradient Descent optimizer with configurable parameters.
+    Nesterov Accelerated Gradient Descent optimizer.
 
-    Args:
-        lr (float): Learning rate.
-        g_tol (float): Stopping criterion for the gradient norm.
-        beta (float): Momentum hyperparameter.
-        h (float): Step size for numerical differentiation.
-        num_der (Callable): Numerical differentiation method.
-
+    Parameters:
+        lr (float): Learning rate (step size).
+        g_tol (float): Convergence tolerance for gradient norm.
+        beta (float): Momentum decay factor.
+        h (float): Step size for numerical gradient computation.
+        num_der (Callable): Numerical differentiation method for gradient calculation.
     """
-
 
     def __init__(
         self,
@@ -32,12 +29,21 @@ class NesterovAcceleratedGradientOptimizer:
         h: float = 0.01,
         num_der: Callable = diff.central_difference
     ) -> None:
-        self.lr = lr
-        self.g_tol = g_tol
-        self.beta = beta
-        self.h = h
-        self.num_der = num_der
+        """
+        Initialize the Nesterov Accelerated Gradient optimizer.
 
+        Args:
+            lr (float): Learning rate for parameter updates.
+            g_tol (float): Stopping criterion threshold for gradient norm.
+            beta (float): Momentum coefficient for velocity accumulation.
+            h (float): Step size for numerical differentiation.
+            num_der (Callable): Function for computing numerical gradients.
+        """
+        self.lr: float = lr
+        self.g_tol: float = g_tol
+        self.beta: float = beta
+        self.h: float = h
+        self.num_der: Callable = num_der
 
     def optimize(
         self,
@@ -47,44 +53,41 @@ class NesterovAcceleratedGradientOptimizer:
         max_iter: int = 25_000
     ) -> np.ndarray:
         """
-        Perform Nesterov accerelated gradient descent optimization with momentum.
+        Perform Nesterov accelerated gradient descent optimization.
 
         Args:
-            f (Callable): Function to minimize.
-            x0 (np.ndarray): Initial point.
-            M0 (np.ndarray or None, optional): Initial momentum vector. Default is zeros.
-            max_iter (int, optional): Maximum number of iteration. Can be infinity
+            f (Callable): Objective function to minimize.
+            x0 (np.ndarray): Initial parameter vector.
+            M0 (np.ndarray, optional): Initial momentum vector. Defaults to zeros.
+            max_iter (int): Maximum number of optimization iterations.
 
         Returns:
-            np.ndarray: The point that (approximately) minimizes the function
+            np.ndarray: Optimized parameter vector (approximate minimizer).
         """
-        # Initialize point x(t)
-        xt: np.ndarray = x0
+        # Initialize current parameter vector
+        xt: np.ndarray = x0.copy()
 
-        # Initialize momentum vector if not provided
+        # Initialize momentum vector
         Mt: np.ndarray = np.zeros_like(xt) if M0 is None else M0.copy()
 
-        # Initialize the iteration counter
+        # Initialize iteration counter
         t: int = 0
 
-        # Compute the gradient at point x(k) + beta*M(k)
-        curr_grad: np.ndarray = self.num_der(f, xt + self.beta*Mt, self.h)
+        # Compute initial gradient at lookahead position
+        curr_grad: np.ndarray = self.num_der(f, xt + self.beta * Mt, self.h)
 
-        # Iterate until the gradient norm is less than the tolerance
+        # Main optimization loop
         while t < max_iter and np.linalg.norm(curr_grad) > self.g_tol:
-            # Update the parameter
-            xt: np.ndarray = xt + Mt
-        
+            # Update parameters using current momentum
+            xt = xt + Mt
 
-            # Recompute the gradient 
-            curr_grad: np.ndarray = self.num_der(f, xt + self.beta*Mt, self.h)
-            
-            # Recompute the moment 
-            Mt: np.ndarray = self.beta * Mt - self.lr * curr_grad
+            # Recompute gradient at new lookahead position
+            curr_grad = self.num_der(f, xt + self.beta * Mt, self.h)
 
+            # Update momentum with gradient at lookahead position
+            Mt = self.beta * Mt - self.lr * curr_grad
 
-            # Increment the counter
+            # Increment iteration counter
             t += 1
-
 
         return xt

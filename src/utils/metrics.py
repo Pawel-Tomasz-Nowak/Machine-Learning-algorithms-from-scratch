@@ -1,6 +1,8 @@
 import numpy as np
-from bootstrap import bootstrap_mean as boot_mean
 from typing import Callable
+
+from bootstrap import bootstrap_mean as boot_mean
+
 
 def mse_metric(
     y_true: np.ndarray,
@@ -14,8 +16,8 @@ def mse_metric(
     Args:
         y_true (np.ndarray): Ground truth target values.
         y_pred (np.ndarray): Predicted target values.
-        boot_n (int, optional): Number of bootstrap samples. Default is 25.
-        frac (float, optional): Fraction of data in each bootstrap sample. Default is 1.
+        boot_n (int): Number of bootstrap samples.
+        frac (float): Fraction of data in each bootstrap sample.
 
     Returns:
         float: Mean squared error.
@@ -31,6 +33,7 @@ def mse_metric(
 
     return boot_mse
 
+
 def rmse_metric(
     y_true: np.ndarray,
     y_pred: np.ndarray,
@@ -43,13 +46,14 @@ def rmse_metric(
     Args:
         y_true (np.ndarray): Ground truth target values.
         y_pred (np.ndarray): Predicted target values.
-        boot_n (int, optional): Number of bootstrap samples. Default is 25.
-        frac (float, optional): Fraction of data in each bootstrap sample. Default is 1.
+        boot_n (int): Number of bootstrap samples.
+        frac (float): Fraction of data in each bootstrap sample.
 
     Returns:
         float: Root mean squared error.
     """
     return np.sqrt(mse_metric(y_true, y_pred, boot_n, frac))
+
 
 def r2_metric(
     y_true: np.ndarray,
@@ -63,8 +67,8 @@ def r2_metric(
     Args:
         y_true (np.ndarray): Ground truth target values.
         y_pred (np.ndarray): Predicted target values.
-        boot_n (int, optional): Number of bootstrap samples. Default is 25.
-        frac (float, optional): Fraction of data in each bootstrap sample. Default is 1.
+        boot_n (int): Number of bootstrap samples.
+        frac (float): Fraction of data in each bootstrap sample.
 
     Returns:
         float: R^2 score.

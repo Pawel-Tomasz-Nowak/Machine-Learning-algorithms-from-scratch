@@ -1,5 +1,6 @@
 import numpy as np
 
+
 def L1(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """
     Compute the L1 loss (sum of absolute errors) between true and predicted values.
@@ -13,6 +14,7 @@ def L1(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """
     r: np.ndarray = y_true - y_pred
     return float(np.sum(np.abs(r)))
+
 
 def L2(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     """
@@ -28,18 +30,15 @@ def L2(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     r: np.ndarray = y_true - y_pred
     return float(np.sum(r ** 2))
 
+
 def Huber(y_true: np.ndarray, y_pred: np.ndarray, c_h: float = 0.9818) -> float:
     """
     Compute the Huber loss between true and predicted values.
 
-    The Huber loss is less sensitive to outliers than the squared error loss.
-    For residuals with absolute value less than or equal to c_h, it uses squared loss.
-    For larger residuals, it uses linear loss.
-
     Args:
         y_true (np.ndarray): Ground truth target values.
         y_pred (np.ndarray): Predicted target values.
-        c_h (float, optional): Huber threshold parameter. Default is 0.9818.
+        c_h (float): Huber threshold parameter.
 
     Returns:
         float: Huber loss.
@@ -51,4 +50,5 @@ def Huber(y_true: np.ndarray, y_pred: np.ndarray, c_h: float = 0.9818) -> float:
         0.5 * r ** 2,
         c_h * (np.abs(r) - 0.5 * c_h)
     )
+    
     return float(np.sum(huber_loss))

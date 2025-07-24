@@ -6,19 +6,18 @@ from typing import Callable
 # Add the 'src' directory to the system path to allow imports from sibling packages
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Import the differentiation module from the core package
 import utils.differentiation as diff
 
 
 class GradientDescentOptimizer:
     """
-    Gradient Descent optimizer with configurable parameters.
+    Standard Gradient Descent optimizer.
 
-    Args:
-        lr (float): Learning rate.
-        g_tol (float): Stopping criterion for the gradient norm.
-        h (float): Step size for numerical differentiation.
-        num_der (Callable): Numerical differentiation method.
+    Parameters:
+        lr (float): Learning rate (step size).
+        g_tol (float): Convergence tolerance for gradient norm.
+        h (float): Step size for numerical gradient computation.
+        num_der (Callable): Numerical differentiation method for gradient calculation.
     """
 
     def __init__(
@@ -28,10 +27,19 @@ class GradientDescentOptimizer:
         h: float = 0.01,
         num_der: Callable = diff.central_difference
     ) -> None:
-        self.lr = lr
-        self.g_tol = g_tol
-        self.h = h
-        self.num_der = num_der
+        """
+        Initialize the Gradient Descent optimizer.
+
+        Args:
+            lr (float): Learning rate for parameter updates.
+            g_tol (float): Stopping criterion threshold for gradient norm.
+            h (float): Step size for numerical differentiation.
+            num_der (Callable): Function for computing numerical gradients.
+        """
+        self.lr: float = lr
+        self.g_tol: float = g_tol
+        self.h: float = h
+        self.num_der: Callable = num_der
 
     def optimize(
         self,
@@ -43,31 +51,31 @@ class GradientDescentOptimizer:
         Perform gradient descent optimization.
 
         Args:
-            f (Callable): Function to minimize.
-            x0 (np.ndarray): Initial point.
+            f (Callable): Objective function to minimize.
+            x0 (np.ndarray): Initial parameter vector.
+            max_iter (int): Maximum number of optimization iterations.
 
         Returns:
-            np.ndarray: The point that (approximately) minimizes the function.
+            np.ndarray: Optimized parameter vector (approximate minimizer).
         """
-        # Rename the initial point for convenience
+        # Initialize current parameter vector
         xt: np.ndarray = x0.copy()
-
-        # Iteration counter
+        
+        # Initialize iteration counter
         t: int = 0
 
-        # Compute the gradient at the initial point
+        # Compute initial gradient
         grad_xt: np.ndarray = self.num_der(f, xt, self.h)
 
-        # Iterate until the gradient norm is less than the tolerance
+        # Main optimization loop
         while t < max_iter and np.linalg.norm(grad_xt) > self.g_tol:
-            # Update the point in the direction of the negative gradient
+            # Update parameters in negative gradient direction
             xt = xt - self.lr * grad_xt
 
-            # Recompute the gradient at the new point
+            # Recompute gradient at new parameter values
             grad_xt = self.num_der(f, xt, self.h)
 
-            # Increment the counter
+            # Increment iteration counter
             t += 1
-
 
         return xt

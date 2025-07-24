@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import os
 
-# Ensure the parent directory is in sys.path for imports
+# Add the 'src' directory to the system path to allow imports from sibling packages
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from typing import Callable, Optional
@@ -11,16 +11,24 @@ from linear_regression import LinearRegression as LinReg
 from optimizers.adam import AdamOptimizer
 from transformers.poly_features import PolynomialFeatures
 
+
 class PolynomialRegression(LinReg):
     """
     Polynomial regression model extending linear regression with polynomial features.
     
-    Args:
+    Parameters:
         d (int): Degree of polynomial features.
         **linreg_kwargs: Additional arguments passed to LinearRegression.
     """
 
     def __init__(self, d: int, **linreg_kwargs) -> None:
+        """
+        Initialize the polynomial regression model.
+
+        Args:
+            d (int): Maximum degree of polynomial features to generate.
+            **linreg_kwargs: Additional keyword arguments passed to LinearRegression.
+        """
         super().__init__(**linreg_kwargs)
         self.d: int = d
         self.poly_transformer: Optional[PolynomialFeatures] = None

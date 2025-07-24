@@ -6,24 +6,23 @@ from typing import Callable
 # Add the 'src' directory to the system path to allow imports from sibling packages
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-# Import the differentiation module from the core package
 import utils.differentiation as diff
 
 
 class AdamOptimizer:
     """
-    Adam optimizer with configurable parameters.
+    Adaptive Moment Estimation (Adam) optimizer.
 
-    Args:
-        lr (float): Learning rate.
-        beta1, beta2 (float): Hyperparameters for momentum and accumulator respectively
-        g_tol (float): Stopping criterion for the gradient norm.
-        eps (float): hyperparameter for preventing dividing by zero.
-        h (float): Step size for numerical differentiation.
-        num_der (Callable): Numerical differentiation method.
-
+    
+    Parameters:
+        lr (float): Base learning rate (step size).
+        beta1 (float): Exponential decay rate for first moment estimates (momentum).
+        beta2 (float): Exponential decay rate for second moment estimates (variance).
+        g_tol (float): Convergence tolerance for gradient norm.
+        eps (float): Small constant to prevent division by zero.
+        h (float): Step size for numerical gradient computation.
+        num_der (Callable): Numerical differentiation method for gradient calculation.
     """
-
 
     def __init__(
         self,
@@ -35,14 +34,25 @@ class AdamOptimizer:
         h: float = 0.01,
         num_der: Callable = diff.central_difference
     ) -> None:
-        self.lr = lr
-        self.beta1 = beta1
-        self.beta2 = beta2
-        self.g_tol = g_tol
-        self.eps = eps
-        self.h = h
-        self.num_der = num_der
+        """
+        Initialize the Adam optimizer.
 
+        Args:
+            lr (float): Base learning rate for parameter updates.
+            beta1 (float): Decay rate for first moment (momentum) estimates.
+            beta2 (float): Decay rate for second moment (variance) estimates.
+            g_tol (float): Stopping criterion threshold for gradient norm.
+            eps (float): Regularization constant to avoid division by zero.
+            h (float): Step size for numerical differentiation.
+            num_der (Callable): Function for computing numerical gradients.
+        """
+        self.lr: float = lr
+        self.beta1: float = beta1
+        self.beta2: float = beta2
+        self.g_tol: float = g_tol
+        self.eps: float = eps
+        self.h: float = h
+        self.num_der: Callable = num_der
 
     def optimize(
         self,
@@ -53,48 +63,56 @@ class AdamOptimizer:
         max_iter: int = 25_000
     ) -> np.ndarray:
         """
-        Perform Adam optimization
+        Perform Adam optimization to minimize the objective function.
+
+        The algorithm maintains exponentially weighted moving averages of gradients
+        and squared gradients, with bias correction:
+            m_t = beta1 * m_{t-1} + (1 - beta1) * g_t
+            v_t = beta2 * v_{t-1} + (1 - beta2) * g_t^2
+            m_hat = m_t / (1 - beta1^t)
+            v_hat = v_t / (1 - beta2^t)
+            x_{t+1} = x_t - lr * m_hat / (sqrt(v_hat) + eps)
 
         Args:
-            f (Callable): Function to minimize.
-            x0 (np.ndarray): Initial point.
-            M0 (np.ndarray or None): Initial momentum. Default zeros.
-            V0 (np.ndarray or None): Initial accumulator. Default zeros.
-            max_iter (int, optional): Maximum number of iteration. Can be infinity
+            f (Callable): Objective function to minimize.
+            x0 (np.ndarray): Initial parameter vector.
+            M0 (np.ndarray, optional): Initial first moment estimate. Defaults to zeros.
+            V0 (np.ndarray, optional): Initial second moment estimate. Defaults to zeros.
+            max_iter (int): Maximum number of optimization iterations.
 
         Returns:
-            np.ndarray: Approximate minimizer.
+            np.ndarray: Optimized parameter vector (approximate minimizer).
         """
-        # Rename the initial point for convenience
+        # Initialize current parameter vector
         xt: np.ndarray = x0.copy()
 
-        # Initialize Mt and Vt
-        Mt: np.ndarray = np.zeros_like(xt) if M0 is None else M0.copy()
-        Vt: np.ndarray = np.zeros_like(xt) if V0 is None else V0.copy()
+        # Initialize moment estimates
+        Mt: np.ndarray = np.zeros_like(xt) if M0 is None else M0.copy()  # First moment
+        Vt: np.ndarray = np.zeros_like(xt) if V0 is None else V0.copy()  # Second moment
 
-        # Initialize the iteration counter
+        # Initialize iteration counter
         t: int = 0
 
-        # Compute the gradient at xt (x0)
+        # Compute initial gradient
         curr_grad: np.ndarray = self.num_der(f, xt, self.h)
 
-        # Keep iterating until exceeding max_iter or the gradient norm is small enough
+        # Main optimization loop
         while t < max_iter and np.linalg.norm(curr_grad) > self.g_tol:
-            # Compute m(t+1) and v(t+1)
-            Mt: np.ndarray = self.beta1*Mt + (1-self.beta1)*curr_grad
-            Vt: np.ndarray = self.beta2*Vt + (1-self.beta2)*curr_grad**2
+            # Update biased first and second moment estimates
+            Mt = self.beta1 * Mt + (1 - self.beta1) * curr_grad
+            Vt = self.beta2 * Vt + (1 - self.beta2) * curr_grad ** 2
 
-            # Rescale m(t+1) and v(t+1)
-            Mt_hat: np.ndarray = Mt/(1-self.beta1**(t+1))
-            Vt_hat: np.ndarray = Vt/(1-self.beta2**(t+1))
+            # Compute bias-corrected moment estimates
+            Mt_hat: np.ndarray = Mt / (1 - self.beta1 ** (t + 1))
+            Vt_hat: np.ndarray = Vt / (1 - self.beta2 ** (t + 1))
 
-            # Update the parameter
-            xt: np.ndarray = xt - self.lr/(self.eps + np.sqrt(Vt_hat))*Mt_hat
+            # Update parameters using bias-corrected estimates
+            xt = xt - (self.lr / (self.eps + np.sqrt(Vt_hat))) * Mt_hat
 
-            # Recompute gradient
-            curr_grad: np.ndarray = self.num_der(f, xt, self.h)
+            # Recompute gradient at new parameter values
+            curr_grad = self.num_der(f, xt, self.h)
 
-            # Increment the counter
+            # Increment iteration counter
             t += 1
 
         return xt

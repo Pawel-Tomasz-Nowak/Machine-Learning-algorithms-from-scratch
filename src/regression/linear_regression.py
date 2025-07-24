@@ -2,7 +2,7 @@ import numpy as np
 import sys
 import os
 
-# Ensure the parent directory is in sys.path for imports
+# Add the 'src' directory to the system path to allow imports from sibling packages
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..', "..")))
 
@@ -14,11 +14,12 @@ from utils.loss import L2
 from optimizers.adam import AdamOptimizer
 import tests.unit_tests as unitests
 
+
 class LinearRegression(BaseModel):
     """
-    Implements multivariate linear regression with customizable loss and regularization.
+    Multivariate linear regression with customizable loss and regularization.
 
-    Args:
+    Parameters:
         loss (Callable): Loss function to use (default: L2).
         loss_params (Optional[dict]): Parameters for the loss function.
         reg (Callable): Regularization function (default: no penalty).
@@ -32,13 +33,20 @@ class LinearRegression(BaseModel):
         reg: Callable = lambda x: 0,
         reg_params: Optional[dict] = None,
     ) -> None:
+        """
+        Initialize the linear regression model.
+
+        Args:
+            loss (Callable): Loss function for training.
+            loss_params (Optional[dict]): Additional parameters for loss function.
+            reg (Callable): Regularization function applied to coefficients.
+            reg_params (Optional[dict]): Additional parameters for regularization.
+        """
         super().__init__()
         self.loss: Callable = loss
         self.loss_params: dict = loss_params or {}
         self.reg: Callable = reg
         self.reg_params: dict = reg_params or {}
-
-        self.is_fit: bool = False
 
     def _loss_function(
         self,
@@ -58,11 +66,13 @@ class LinearRegression(BaseModel):
             float: Total loss value.
         """
         y_pred: np.ndarray = X @ B  # Predicted values
+        
         # Compute the loss for each output independently
         losses: np.ndarray = np.array([
             self.loss(y_true[:, i], y_pred[:, i], **self.loss_params)
             for i in range(self.m)
         ])
+        
         return float(np.sum(losses) + self.reg(B, **self.reg_params))
 
     def fit(
@@ -86,11 +96,15 @@ class LinearRegression(BaseModel):
         Returns:
             np.ndarray: Fitted coefficient matrix, shape (p+1, m).
         """
+        # Input validation
+        unitests.assert_is_ndarray(X)
+        unitests.assert_is_ndarray(y_true)
+        unitests.assert_ndim(X, 2)
+        unitests.assert_2d_same_rows(X, y_true)
+
         n: int = X.shape[0]
         self.p: int = X.shape[1]  # Number of predictors
         self.m: int = y_true.shape[1]  # Number of outputs
-
-        self.is_fit: bool = True
 
         # Add intercept column to X
         one_col: np.ndarray = np.ones((n, 1), dtype=np.float32)
@@ -108,6 +122,7 @@ class LinearRegression(BaseModel):
         )
 
         self.coefficient_: np.ndarray = coefficient
+        self.is_fit = True
 
         return coefficient
 
@@ -124,8 +139,9 @@ class LinearRegression(BaseModel):
         Raises:
             AssertionError: If the model is not fitted or X has wrong shape/type.
         """
-        # Use unit tests for validation
+        # Input validation
         unitests.assert_fitted(self.is_fit)
+        unitests.assert_is_ndarray(X)
         unitests.assert_ndim(X, 2)
         unitests.assert_feature_count(X, self.p)
 
