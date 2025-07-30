@@ -22,7 +22,7 @@ class Bootstrap:
     def __init__(
         self,
         f: Callable[[np.ndarray, np.ndarray], Union[np.ndarray, float]],
-        boot_n: int,
+        boot_n: int = 10,
         frac: float = 1.0
     ) -> None:
         """
