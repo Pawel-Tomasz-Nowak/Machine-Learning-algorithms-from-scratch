@@ -35,7 +35,7 @@ class Bootstrap:
         """
         self.validate_fraction(frac)
         
-        self.f: Callable[[np.ndarray, np.ndarray], Union[np.ndarray, float]] = f
+        self.f: Callable = f
         self.boot_n: int = boot_n
         self.frac: float = frac
 
@@ -72,9 +72,7 @@ class Bootstrap:
         """
         if y is not None:
             unit_tests.assert_2d_same_rows(X, y)
-        else:
-            y = np.zeros(shape=(X.shape[0], 1), dtype=np.uint8)
-
+     
         n: int = X.shape[0]
         boot_size: int = int(self.frac * n)
         
@@ -83,10 +81,16 @@ class Bootstrap:
             n, [self.boot_n, boot_size], replace=True
         )
         
-        # Compute statistic for each bootstrap sample
-        estimates: np.ndarray = np.apply_along_axis(
-            lambda idxs: self.f(X[idxs], y[idxs]), axis=1, arr=boot_samples
-        )
+        if y is not None:
+            # Compute statistic for each bootstrap sample
+            estimates: np.ndarray = np.apply_along_axis(
+                lambda idxs: self.f(X[idxs], y[idxs]), axis=1, arr=boot_samples
+            )
+        elif y is None:
+            estimates: np.ndarray = np.apply_along_axis(
+                lambda idxs: self.f(X[idxs]), axis=1, arr=boot_samples
+            )
+
         
         # Return the specified statistic of the bootstrap estimates
         return statistics(estimates, axis=0, **statistics_params)
