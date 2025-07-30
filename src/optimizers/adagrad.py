@@ -24,7 +24,7 @@ class AdaGradOptimizer:
 
     def __init__(
         self,
-        lr: float,
+        lr: float = 0.5,
         g_tol: float = 1e-4,
         eps: float = 1e-8,
         h: float = 0.01,
@@ -51,7 +51,7 @@ class AdaGradOptimizer:
         f: Callable[[np.ndarray], float],
         x0: np.ndarray,
         V0: np.ndarray | None = None,
-        max_iter: int = 25_000
+        max_iter: int = 1_000
     ) -> np.ndarray:
         """
         Perform AdaGrad optimization to minimize the objective function.

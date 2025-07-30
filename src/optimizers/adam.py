@@ -26,7 +26,7 @@ class AdamOptimizer:
 
     def __init__(
         self,
-        lr: float,
+        lr: float = 0.5,
         beta1: float = 0.9,
         beta2: float = 0.999,
         g_tol: float = 1e-4,
@@ -60,7 +60,7 @@ class AdamOptimizer:
         x0: np.ndarray,
         M0: np.ndarray | None = None,
         V0: np.ndarray | None = None,
-        max_iter: int = 25_000
+        max_iter: int = 1_000
     ) -> np.ndarray:
         """
         Perform Adam optimization to minimize the objective function.
