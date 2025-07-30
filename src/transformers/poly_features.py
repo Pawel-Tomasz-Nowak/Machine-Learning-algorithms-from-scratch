@@ -23,6 +23,8 @@ class PolynomialFeatures:
         Args:
             d (int): Maximum sum of powers of features (polynomial degree).
         """
+        assert d > 0, "The polynomial degree has to be a positive integer number"
+
         self.d: int = d
         self.is_fit: bool = False
 
