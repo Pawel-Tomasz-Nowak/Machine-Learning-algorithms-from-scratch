@@ -21,7 +21,7 @@ class Bootstrap:
 
     def __init__(
         self,
-        f: Callable[[np.ndarray, np.ndarray], Union[np.ndarray, float]],
+        f: Callable,
         boot_n: int = 10,
         frac: float = 1.0
     ) -> None:
@@ -57,7 +57,7 @@ class Bootstrap:
         y: np.ndarray | None = None,
         statistics: Callable = np.mean,
         **statistics_params
-    ) -> Union[np.ndarray, float]:
+    ) -> np.ndarray:
         """
         Estimate the specified statistic using bootstrap resampling.
 
@@ -68,7 +68,7 @@ class Bootstrap:
             **statistics_params: Additional parameters for the statistics function.
 
         Returns:
-            Union[np.ndarray, float]: Bootstrap estimate of the statistic.
+            np.ndarray: Bootstrap estimate of the statistic.
         """
         if y is not None:
             unit_tests.assert_2d_same_rows(X, y)
