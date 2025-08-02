@@ -62,7 +62,7 @@ def assert_2d_same_rows(x1: np.ndarray, x2: np.ndarray) -> None:
     assert_is_ndarray(x2)
     assert_ndim(x1, 2)
     assert_ndim(x2, 2)
-    assert x1.shape[0] == x2.shape[0], "Arrays must have the same number of rows"
+    assert x1.shape[0] == x2.shape[0], "Arrays must be 2-dimensional and have the same number of rows"
 
 
 def assert_feature_count(x: np.ndarray, p: int) -> None:
