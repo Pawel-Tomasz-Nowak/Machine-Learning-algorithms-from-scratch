@@ -53,27 +53,42 @@ class Bootstrap:
 
     def estimate(
         self,
-        X: np.ndarray,
+        X: np.ndarray | None = None,
         y: np.ndarray | None = None,
         statistics: Callable = np.mean,
         **statistics_params
-    ) -> np.ndarray:
+    ):
         """
         Estimate the specified statistic using bootstrap resampling.
 
         Args:
-            X (np.ndarray): Dataset to resample from.
-            y (np.ndarray, optional): An optional label vector with the length of X.
+            X (np.ndarray, optional): Primary dataset to resample from.
+            y (np.ndarray, optional): Secondary dataset (e.g., labels) to resample from.
             statistics (Callable): Statistic to compute on bootstrap estimates.
             **statistics_params: Additional parameters for the statistics function.
 
         Returns:
-            np.ndarray: Bootstrap estimate of the statistic.
+            Bootstrap estimate of the statistic.
+            
+        Raises:
+            AssertionError: If both X and y are None, or if they have different lengths.
         """
-        if y is not None:
+        # Validate that at least one dataset is provided
+        assert not (X is None and y is None), "X and y can't be None at the same time"
+        
+        # Determine primary dataset and sample size
+        if X is not None and y is not None:
+            # Both datasets provided - validate they have same length
             unit_tests.assert_2d_same_rows(X, y)
-     
-        n: int = X.shape[0]
+            n: int = X.shape[0]
+        elif X is not None:
+            # Only X provided
+            n: int = X.shape[0]
+        else:  # y is not None and X is None
+            # Only y provided
+            n: int = y.shape[0]
+        
+        # Calculate bootstrap sample size
         boot_size: int = int(self.frac * n)
         
         # Generate bootstrap sample indices
@@ -81,16 +96,22 @@ class Bootstrap:
             n, [self.boot_n, boot_size], replace=True
         )
         
-        if y is not None:
-            # Compute statistic for each bootstrap sample
+        # Compute statistic for each bootstrap sample based on available data
+        if X is not None and y is not None:
+            # Both X and y available - pass both to function
             estimates: np.ndarray = np.apply_along_axis(
                 lambda idxs: self.f(X[idxs], y[idxs]), axis=1, arr=boot_samples
             )
-        elif y is None:
+        elif X is not None and y is None:
+            # Only X available - pass only X to function
             estimates: np.ndarray = np.apply_along_axis(
                 lambda idxs: self.f(X[idxs]), axis=1, arr=boot_samples
             )
-
+        else:  # X is None and y is not None
+            # Only y available - pass only y to function
+            estimates: np.ndarray = np.apply_along_axis(
+                lambda idxs: self.f(y[idxs]), axis=1, arr=boot_samples
+            )
         
         # Return the specified statistic of the bootstrap estimates
         return statistics(estimates, axis=0, **statistics_params)
