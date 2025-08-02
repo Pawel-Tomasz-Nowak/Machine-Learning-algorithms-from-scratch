@@ -73,14 +73,15 @@ class GaussianDiscriminator(BaseModel):
         Args:
             method (str): Method for estimating covariance matrices:
                 - "GDA": General Gaussian discriminant analysis
-                - "Tied": Tied covariance matrices (same for all classes)
+                - "DGA": diagonal covariance matrices
                 - "MAP": MAP estimation of covariance matrix
+                - "Tied": Tied covariance matrices (same for all classes)
                 - "Tied DGA": Tied and diagonal covariance matrices
                 - "Tied MAP": Tied and MAP estimation of covariance matrix
             lambd_map (float): Lambda parameter for MAP estimation.
             regularization (float): Regularization term for numerical stability.
             **bootstrap_kwargs: Optional bootstrap parameters:
-                - boot_n (int): Number of bootstrap samples (required)
+                - boot_n (int): Number of bootstrap samples (default: 10)
                 - frac (float): Fraction of data in each bootstrap sample (default: 1.0)
         
         Raises:
@@ -90,7 +91,7 @@ class GaussianDiscriminator(BaseModel):
         super().__init__()
         
         # Validate parameters
-        valid_methods = ["GDA", "Tied", "MAP", "Tied DGA", "Tied MAP"]
+        valid_methods = ["GDA", "DGA", "MAP", "Tied", "Tied DGA", "Tied MAP"]
         assert method in valid_methods, f"Invalid covariance matrix estimation method '{method}'. Valid options: {valid_methods}"
         assert regularization > 0, "Regularization term must be positive"
         assert 0 <= lambd_map <= 1, "Lambda parameter must be in [0, 1] interval"
@@ -232,7 +233,10 @@ class GaussianDiscriminator(BaseModel):
                 self.lambd_map * diagonal_matrix + 
                 (1 - self.lambd_map) * covariance_matrix
             )
-        
+        elif self.method == "DGA":
+            # Extract the diagonal of the class-specific covariance matrix
+            covariance_matrix: np.ndarray = np.diag(np.diag(covariance_matrix))
+
         # For "GDA" method, return matrix as-is
         return covariance_matrix
 
