@@ -2,6 +2,7 @@ import numpy as np
 import sys
 import os
 from scipy.stats import multivariate_normal as mvn
+from typing import Callable, Optional
 
 # Add the 'src' directory to the system path to allow imports from sibling packages
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -61,16 +62,43 @@ class GaussianDiscriminator(BaseModel):
     parameter estimation for robust statistics.
     """
 
-    def __init__(self, **bootstrap_kwargs) -> None:
+    def __init__(self, 
+                 method: str = "GDA",
+                 lambd_map: float = 0.0,
+                 regularization: float = 1e-6,
+                 **bootstrap_kwargs) -> None:
         """
         Initialize the Gaussian Discriminant Analysis classifier.
 
         Args:
+            method (str): Method for estimating covariance matrices:
+                - "GDA": General Gaussian discriminant analysis
+                - "Tied": Tied covariance matrices (same for all classes)
+                - "MAP": MAP estimation of covariance matrix
+                - "Tied DGA": Tied and diagonal covariance matrices
+                - "Tied MAP": Tied and MAP estimation of covariance matrix
+            lambd_map (float): Lambda parameter for MAP estimation.
+            regularization (float): Regularization term for numerical stability.
             **bootstrap_kwargs: Optional bootstrap parameters:
                 - boot_n (int): Number of bootstrap samples (required)
                 - frac (float): Fraction of data in each bootstrap sample (default: 1.0)
+        
+        Raises:
+            AssertionError: If method is invalid, regularization is non-positive, 
+                          or lambda is outside [0,1] range.
         """
         super().__init__()
+        
+        # Validate parameters
+        valid_methods = ["GDA", "Tied", "MAP", "Tied DGA", "Tied MAP"]
+        assert method in valid_methods, f"Invalid covariance matrix estimation method '{method}'. Valid options: {valid_methods}"
+        assert regularization > 0, "Regularization term must be positive"
+        assert 0 <= lambd_map <= 1, "Lambda parameter must be in [0, 1] interval"
+        
+        # Store parameters as instance attributes
+        self.method: str = method
+        self.lambd_map: float = lambd_map
+        self.regularization: float = regularization
         self.bootstrap_kwargs: dict = bootstrap_kwargs or {}
 
     def _estimate_vector_mean(self, X: np.ndarray) -> np.ndarray:
@@ -151,34 +179,96 @@ class GaussianDiscriminator(BaseModel):
         
         return estimated_prior
 
-    def fit(self, X: np.ndarray, y_true: np.ndarray,
-            method: str = "GDA",
-            lambd_map: float = 0,
-            regularization: float = 1e-6) -> None:
+    def _get_tied_covariance_matrix(self, X: np.ndarray, class_index: int) -> np.ndarray:
+        """
+        Get tied covariance matrix (same for all classes).
+        
+        Args:
+            X (np.ndarray): Full feature matrix (all classes).
+            class_index (int): Current class index in the loop.
+            
+        Returns:
+            np.ndarray: Tied covariance matrix.
+        """
+        # Estimate tied matrix only in first iteration
+        if class_index == 0:
+            covariance_matrix: np.ndarray = self._estimate_covariance_matrix(X)
+            
+            if self.method == "Tied DGA":
+                # Use only diagonal elements
+                diagonal_matrix: np.ndarray = np.diag(np.diag(covariance_matrix))
+                self._tied_covariance_matrix = diagonal_matrix
+                
+            elif self.method == "Tied MAP":
+                # Apply MAP estimation with diagonal shrinkage
+                diagonal_matrix: np.ndarray = np.diag(np.diag(covariance_matrix))
+                self._tied_covariance_matrix = (
+                    self.lambd_map * diagonal_matrix + 
+                    (1 - self.lambd_map) * covariance_matrix
+                )
+            else:
+                # Standard tied covariance matrix ("Tied" method)
+                self._tied_covariance_matrix = covariance_matrix
+        
+        return self._tied_covariance_matrix
+
+    def _get_class_specific_covariance_matrix(self, X_class: np.ndarray) -> np.ndarray:
+        """
+        Get class-specific covariance matrix.
+        
+        Args:
+            X_class (np.ndarray): Feature matrix for current class.
+            
+        Returns:
+            np.ndarray: Class-specific covariance matrix.
+        """
+        # Estimate covariance matrix for current class
+        covariance_matrix: np.ndarray = self._estimate_covariance_matrix(X_class)
+        
+        if self.method == "MAP":
+            # Apply MAP estimation with diagonal shrinkage
+            diagonal_matrix: np.ndarray = np.diag(np.diag(covariance_matrix))
+            covariance_matrix = (
+                self.lambd_map * diagonal_matrix + 
+                (1 - self.lambd_map) * covariance_matrix
+            )
+        
+        # For "GDA" method, return matrix as-is
+        return covariance_matrix
+
+    def _get_covariance_matrix(self, X: np.ndarray, X_class: np.ndarray, class_index: int) -> np.ndarray:
+        """
+        Get covariance matrix based on the specified method.
+        
+        Args:
+            X (np.ndarray): Full feature matrix (all classes).
+            X_class (np.ndarray): Feature matrix for current class.
+            class_index (int): Current class index in the loop.
+            
+        Returns:
+            np.ndarray: Estimated covariance matrix.
+        """
+        if self.method.startswith("Tied"):
+            return self._get_tied_covariance_matrix(X, class_index)
+        else:
+            return self._get_class_specific_covariance_matrix(X_class)
+
+    def fit(self, X: np.ndarray, y_true: np.ndarray) -> None:
         """
         Fit the Gaussian Discriminant Analysis model.
 
         Args:
             X (np.ndarray): Feature matrix, shape (n_samples, n_features).
             y_true (np.ndarray): Target labels, shape (n_samples, 1).
-            method (str): Method for estimating covariance matrices:
-                - "GDA": General Gaussian discriminant analysis
-                - "Tied": Tied covariance matrices (same for all classes)
-                - "MAP": MAP estimation of covariance matrix
-                - "Tied DGA": Tied and diagonal covariance matrices
-            lambd_map (float): Lambda parameter for MAP estimation.
-            regularization (float): Regularization term for numerical stability.
 
         Raises:
-            AssertionError: If input arrays are invalid or regularization is non-positive.
+            AssertionError: If input arrays are invalid.
         """
         # Input validation
         unitests.assert_2d_same_rows(X, y_true)
         unitests.assert_feature_count(y_true, 1)
-        assert regularization > 0, "Regularization term must be positive"
         
         # Store parameters
-        self.regularization: float = regularization
         self.p: int = X.shape[1]  # Number of features
 
         # Find unique classes
@@ -211,7 +301,14 @@ class GaussianDiscriminator(BaseModel):
 
             # Estimate class parameters
             vector_mean: np.ndarray = self._estimate_vector_mean(X_class)
-            covariance_matrix: np.ndarray = self._estimate_covariance_matrix(X_class)
+            
+            # Get covariance matrix based on method
+            if self.method.startswith("Tied") and i > 0:
+                # For tied methods after first class, reuse the tied matrix
+                covariance_matrix = self._tied_covariance_matrix
+            else:
+                # Estimate new matrix for current class or first tied matrix
+                covariance_matrix: np.ndarray = self._get_covariance_matrix(X, X_class, i)
 
             # Create label object and store
             label_object = Label(class_label[0], class_prior, vector_mean, covariance_matrix)
