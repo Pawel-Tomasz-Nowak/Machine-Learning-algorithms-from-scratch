@@ -65,6 +65,27 @@ def assert_2d_same_rows(x1: np.ndarray, x2: np.ndarray) -> None:
     assert x1.shape[0] == x2.shape[0], "Arrays must be 2-dimensional and have the same number of rows"
 
 
+def assert_matrix_vector_match(X: np.ndarray, y: np.ndarray) -> None:
+    """
+    Assert that feature matrix (2D) and label vector (1D) have compatible shapes.
+    
+    Validates that X is 2D, y is 1D, and they have the same number of samples.
+    Commonly used for validating X (features) and y (labels) in ML algorithms.
+    
+    Args:
+        X (np.ndarray): Feature matrix, expected shape (n_samples, n_features).
+        y (np.ndarray): Label vector, expected shape (n_samples,).
+        
+    Raises:
+        AssertionError: If X is not 2D, y is not 1D, or they have different sample counts.
+    """
+    assert_is_ndarray(X)
+    assert_is_ndarray(y)
+    assert_ndim(X, 2)
+    assert_ndim(y, 1)
+    assert X.shape[0] == y.shape[0], "Feature matrix and label vector must have the same number of samples"
+
+
 def assert_feature_count(x: np.ndarray, p: int) -> None:
     """
     Assert that x is a 2D array with exactly p features (columns).

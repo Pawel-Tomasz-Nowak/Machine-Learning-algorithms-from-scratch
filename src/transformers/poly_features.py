@@ -100,5 +100,7 @@ class PolynomialFeatures:
         Returns:
             np.ndarray: Matrix of polynomial features of shape (n_samples, n_polynomial_features).
         """
-        self.fit(X)
+        if not self.is_fit:
+            self.fit(X)
+
         return self.transform(X)
