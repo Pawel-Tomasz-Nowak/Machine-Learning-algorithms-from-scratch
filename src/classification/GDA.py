@@ -2,7 +2,6 @@ import numpy as np
 import sys
 import os
 from scipy.stats import multivariate_normal as mvn
-from typing import Callable, Optional
 
 # Add the 'src' directory to the system path to allow imports from sibling packages
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
@@ -161,7 +160,7 @@ class GaussianDiscriminator(BaseModel):
         Estimate the prior probability for target class using bootstrap estimation.
 
         Args:
-            y (np.ndarray): Label vector, shape (n_samples, 1).
+            y (np.ndarray): Label vector, shape (n_samples).
             target_class (int): Target class to estimate prior probability for.
 
         Returns:
@@ -169,7 +168,7 @@ class GaussianDiscriminator(BaseModel):
         """
         def prior_probability_function(y: np.ndarray) -> float:
             """Prior probability estimation function for bootstrap."""
-            class_mask: np.ndarray = (y == target_class)[:, 0]
+            class_mask: np.ndarray = (y == target_class)
             n_class: int = np.sum(class_mask)
             n_total: int = y.shape[0]
             return float(n_class / n_total)
@@ -263,20 +262,19 @@ class GaussianDiscriminator(BaseModel):
 
         Args:
             X (np.ndarray): Feature matrix, shape (n_samples, n_features).
-            y_true (np.ndarray): Target labels, shape (n_samples, 1).
+            y_true (np.ndarray): Target labels, shape (n_samples).
 
         Raises:
             AssertionError: If input arrays are invalid.
         """
         # Input validation
-        unitests.assert_2d_same_rows(X, y_true)
-        unitests.assert_feature_count(y_true, 1)
+        unitests.assert_matrix_vector_match(X, y_true)
         
         # Store parameters
         self.p: int = X.shape[1]  # Number of features
 
         # Find unique classes
-        self.unique_classes: np.ndarray = np.unique(y_true, axis=0)
+        self.unique_classes: np.ndarray = np.unique(y_true)
         self.n_classes: int = self.unique_classes.shape[0]
 
         # Initialize class labels dictionary
@@ -288,7 +286,7 @@ class GaussianDiscriminator(BaseModel):
         # Estimate parameters for each class
         for i, class_label in enumerate(self.unique_classes):
             # Extract observations for current class
-            class_mask: np.ndarray = (y_true == class_label)[:, 0]
+            class_mask: np.ndarray = (y_true == class_label)
             X_class: np.ndarray = X[class_mask]
             
             # Check for insufficient data
@@ -300,7 +298,7 @@ class GaussianDiscriminator(BaseModel):
                 # For the last class, use remaining probability to ensure sum = 1
                 class_prior: float = max(1.0 - cumulative_prior, 0.0)
             else:
-                class_prior = self._estimate_prior_probability(y_true, class_label[0])
+                class_prior = self._estimate_prior_probability(y_true, class_label)
                 cumulative_prior += class_prior
 
             # Estimate class parameters
@@ -315,7 +313,7 @@ class GaussianDiscriminator(BaseModel):
                 covariance_matrix: np.ndarray = self._get_covariance_matrix(X, X_class, i)
 
             # Create label object and store
-            label_object = Label(class_label[0], class_prior, vector_mean, covariance_matrix)
+            label_object = Label(class_label, class_prior, vector_mean, covariance_matrix)
             self.int2label[i] = label_object
 
         # Mark model as fitted
@@ -330,7 +328,7 @@ class GaussianDiscriminator(BaseModel):
             normalize (bool): Whether to normalize likelihoods to sum to 1.
 
         Returns:
-            np.ndarray: Probability matrix, shape (n_samples, n_classes).
+            np.ndarray: Probability matrix, shape (n_samples).
 
         Raises:
             AssertionError: If model is not fitted or X has wrong feature count.
@@ -354,6 +352,9 @@ class GaussianDiscriminator(BaseModel):
         # Normalize likelihoods to get probabilities
         normalization_terms: np.ndarray = likelihoods.sum(axis=1).reshape(-1, 1)
         
+        # Avoid division by zero
+        normalization_terms = np.where(normalization_terms == 0, 1e-10, normalization_terms)
+        
         probabilities: np.ndarray = likelihoods / normalization_terms
 
         return probabilities
@@ -366,7 +367,7 @@ class GaussianDiscriminator(BaseModel):
             X (np.ndarray): Feature matrix, shape (n_samples, n_features).
 
         Returns:
-            np.ndarray: Predicted class labels, shape (n_samples, 1).
+            np.ndarray: Predicted class labels, shape (n_samples).
 
         Raises:
             AssertionError: If model is not fitted or X has wrong feature count.
@@ -384,6 +385,6 @@ class GaussianDiscriminator(BaseModel):
         # Map indices back to class labels
         predicted_labels: np.ndarray = np.array([
             self.int2label[idx].label for idx in predicted_class_indices
-        ]).reshape(-1, 1)
+        ])
 
         return predicted_labels
