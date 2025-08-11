@@ -47,22 +47,26 @@ def assert_1d_same_length(x1: np.ndarray, x2: np.ndarray) -> None:
     assert x1.shape[0] == x2.shape[0], "Arrays must have the same number of elements"
 
 
-def assert_2d_same_rows(x1: np.ndarray, x2: np.ndarray) -> None:
+def assert_2d_same_rows(X: np.ndarray, y: np.ndarray) -> None:
     """
-    Assert that x1 and x2 are 2D arrays with the same number of rows.
+    Assert that X is 2D and y is 1D or 2D, both with the same number of rows.
     
     Args:
-        x1 (np.ndarray): First 2D array to compare.
-        x2 (np.ndarray): Second 2D array to compare.
+        X (np.ndarray): Feature matrix, expected shape (n_samples, n_features).
+        y (np.ndarray): Target array, expected shape (n_samples,) or (n_samples, n_targets).
         
     Raises:
-        AssertionError: If arrays are not 2D or have different row counts.
+        AssertionError: If X is not 2D, y is not 1D or 2D, or they have different row counts.
     """
-    assert_is_ndarray(x1)
-    assert_is_ndarray(x2)
-    assert_ndim(x1, 2)
-    assert_ndim(x2, 2)
-    assert x1.shape[0] == x2.shape[0], "Arrays must be 2-dimensional and have the same number of rows"
+    assert_is_ndarray(X)
+    assert_is_ndarray(y)
+    assert_ndim(X, 2)
+    
+    # y can be 1D or 2D
+    assert y.ndim in [1, 2], f"y must be 1D or 2D, got {y.ndim}D"
+    
+    # Check that both arrays have the same number of rows
+    assert X.shape[0] == y.shape[0], f"X and y must have the same number of rows: X has {X.shape[0]}, y has {y.shape[0]}"
 
 
 def assert_matrix_vector_match(X: np.ndarray, y: np.ndarray) -> None:
@@ -86,20 +90,20 @@ def assert_matrix_vector_match(X: np.ndarray, y: np.ndarray) -> None:
     assert X.shape[0] == y.shape[0], "Feature matrix and label vector must have the same number of samples"
 
 
-def assert_feature_count(x: np.ndarray, p: int) -> None:
+def assert_feature_count(X: np.ndarray, expected_features: int) -> None:
     """
-    Assert that x is a 2D array with exactly p features (columns).
+    Assert that X is a 2D array with exactly the expected number of features (columns).
     
     Args:
-        x (np.ndarray): Array to check.
-        p (int): Expected number of features.
+        X (np.ndarray): Feature matrix to check, expected shape (n_samples, n_features).
+        expected_features (int): Expected number of features.
         
     Raises:
-        AssertionError: If array doesn't have exactly p features.
+        AssertionError: If array doesn't have exactly the expected number of features.
     """
-    assert_is_ndarray(x)
-    assert_ndim(x, 2)
-    assert x.shape[1] == p, f"Array must have exactly {p} features"
+    assert_is_ndarray(X)
+    assert_ndim(X, 2)
+    assert X.shape[1] == expected_features, f"Array must have exactly {expected_features} features, got {X.shape[1]}"
 
 
 def assert_fitted(is_fit: bool) -> None:
@@ -112,4 +116,4 @@ def assert_fitted(is_fit: bool) -> None:
     Raises:
         AssertionError: If the model is not fitted.
     """
-    assert is_fit, "The object isn't fitted yet"
+    assert is_fit, "Model must be fitted before making predictions. Call fit() first."
