@@ -210,3 +210,38 @@ class OneHotEncoder:
             transformed_features.append(feature_dummies)
 
         return transformed_features
+    
+    def fit_transform(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> List[np.ndarray]:
+        """
+        Fit the encoder and transform the data in one step.
+        
+        Convenience method that combines fitting and transformation for efficient workflow.
+        Equivalent to calling fit() followed by transform(), but returns the transformed data
+        directly. The y parameter is included for sklearn API compatibility.
+    
+        Args:
+            X (np.ndarray): Categorical feature matrix, shape (n_samples, n_features).
+                          Each column represents a different categorical feature.
+            y (Optional[np.ndarray]): Target values (ignored, present for API compatibility).
+    
+        Returns:
+            List[np.ndarray]: List of dummy variable matrices. Each element is a 2D array
+                            with shape (n_samples, n_categories_for_feature_i), where
+                            n_categories_for_feature_i is the number of unique categories
+                            in the i-th feature.
+    
+        Raises:
+            AssertionError: If X is not 2D array.
+            
+        Example:
+            >>> encoder = OneHotEncoder()
+            >>> transformed_features = encoder.fit_transform(X_train)
+            >>> # Equivalent to: encoder.fit(X_train); encoder.transform(X_train)
+        """
+        # Always fit first (even if already fitted, to handle new data patterns)
+        self.fit(X, y)
+        
+        # Transform the fitted data
+        transformed_features: List[np.ndarray] = self.transform(X)
+    
+        return transformed_features
