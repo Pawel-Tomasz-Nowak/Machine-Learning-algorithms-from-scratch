@@ -103,7 +103,41 @@ class CategoricalDummyEncoder:
         )
 
         return dummy_matrix
+    
+    def fit_transform(self, X: np.ndarray) -> np.ndarray:
+        """
+        Fit the encoder and transform the data in one step.
+        
+        Convenience method that combines fitting and transformation for efficient workflow.
+        Equivalent to calling fit() followed by transform(), but returns the transformed data
+        directly.
+    
+        Args:
+            X (np.ndarray): 1D array of categorical values, shape (n_samples,).
+    
+        Returns:
+            np.ndarray: Binary matrix of dummy variables, shape (n_samples, n_categories).
+                       Each row represents one sample, each column represents one category.
+    
+        Raises:
+            AssertionError: If X is not 1D array.
+            
+        Example:
+            >>> encoder = CategoricalDummyEncoder()
+            >>> dummy_matrix = encoder.fit_transform(np.array(['cat', 'dog', 'cat', 'bird']))
+            >>> # Equivalent to: encoder.fit(X); encoder.transform(X)
+            >>> print(dummy_matrix.shape)  # (4, 3) for ['bird', 'cat', 'dog']
+        """
+        # Fit the encoder to learn categories
+        self.fit(X)
+        
+        # Transform the data to dummy variables
+        dummy_matrix: np.ndarray = self.transform(X)
+    
+        return dummy_matrix
 
+
+    
 
 class OneHotEncoder:
     """
