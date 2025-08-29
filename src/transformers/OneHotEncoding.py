@@ -199,11 +199,11 @@ class OneHotEncoder:
             # Create and fit encoder for current feature
             if categories == 'auto':
                 feature_encoder = CategoricalDummyEncoder()
-            elif isinstance(categories, list) and isinstance(categories[feature_idx], np.ndarray):
+            elif isinstance(categories, list) and len(categories) == self.n_features_ and isinstance(categories[feature_idx], np.ndarray):
                 feature_encoder = CategoricalDummyEncoder(categories[feature_idx])
             else:
                 raise TypeError(f'''Unexpected datatype for list of categories. 
-                                Expected list of ndarrays, got {type(categories)} of {type(categories[feature_idx])}''')
+                                Expected {self.n_features_}-length list of ndarrays, got {type(categories)} of {type(categories[feature_idx])}''')
             
             feature_encoder.fit(feature_column)
 
