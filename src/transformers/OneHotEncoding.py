@@ -165,7 +165,8 @@ class OneHotEncoder:
         self.n_features_: int = 0
         self.feature_encoders_: List[CategoricalDummyEncoder] = []
 
-    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> None:
+    def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None,
+            categories: Union[list[np.ndarray], str] = 'auto') -> None:
         """
         Fit the one-hot encoder to categorical data.
         
@@ -177,6 +178,7 @@ class OneHotEncoder:
             X (np.ndarray): Categorical feature matrix, shape (n_samples, n_features).
                           Each column represents a different categorical feature.
             y (Optional[np.ndarray]): Target values (ignored, present for consistency)
+            categories: Union[list[np.ndarray], str]: Precomputed categories for each categorical feature
 
         Raises:
             AssertionError: If X is not 2D array.
@@ -195,7 +197,14 @@ class OneHotEncoder:
             feature_column: np.ndarray = X[:, feature_idx]
 
             # Create and fit encoder for current feature
-            feature_encoder = CategoricalDummyEncoder()
+            if categories == 'auto':
+                feature_encoder = CategoricalDummyEncoder()
+            elif isinstance(categories, list) and isinstance(categories[feature_idx], np.ndarray):
+                feature_encoder = CategoricalDummyEncoder(categories[feature_idx])
+            else:
+                raise TypeError(f'''Unexpected datatype for list of categories. 
+                                Expected list of ndarrays, got {type(categories)} of {type(categories[feature_idx])}''')
+            
             feature_encoder.fit(feature_column)
 
             # Store fitted encoder
@@ -204,7 +213,7 @@ class OneHotEncoder:
         # Mark as fitted
         self.is_fit = True
 
-    def transform(self, X: np.ndarray) -> List[np.ndarray]:
+    def transform(self, X: np.ndarray) -> Union[List[np.ndarray], np.ndarray]:
         """
         Transform categorical features to dummy variables.
         
@@ -216,10 +225,11 @@ class OneHotEncoder:
             X (np.ndarray): Categorical feature matrix to transform, shape (n_samples, n_features).
 
         Returns:
-            List[np.ndarray]: List of dummy variable matrices. Each element is a 2D array
+            List[np.ndarray] or np.ndarray: List of dummy variable matrices. Each element is a 2D array
                             with shape (n_samples, n_categories_for_feature_i), where
                             n_categories_for_feature_i is the number of unique categories
                             in the i-th feature.
+                            When the input X has only one feature, returns a single 2D aray with shape (n_samples, n_categories_for_feature)
 
         Raises:
             AssertionError: If encoder is not fitted or X has wrong number of features.
@@ -243,9 +253,12 @@ class OneHotEncoder:
             # Add to results
             transformed_features.append(feature_dummies)
 
+        if len(transformed_features) == 1:
+            return transformed_features[0]
+        
         return transformed_features
     
-    def fit_transform(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> List[np.ndarray]:
+    def fit_transform(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> Union[List[np.ndarray], np.ndarray]:
         """
         Fit the encoder and transform the data in one step.
         
@@ -259,10 +272,11 @@ class OneHotEncoder:
             y (Optional[np.ndarray]): Target values (ignored, present for API compatibility).
     
         Returns:
-            List[np.ndarray]: List of dummy variable matrices. Each element is a 2D array
+            List[np.ndarray] or np.ndarray: List of dummy variable matrices. Each element is a 2D array
                             with shape (n_samples, n_categories_for_feature_i), where
                             n_categories_for_feature_i is the number of unique categories
                             in the i-th feature.
+                            When the input X has only one feature, returns a single 2D aray with shape (n_samples, n_categories_for_feature)
     
         Raises:
             AssertionError: If X is not 2D array.
@@ -276,6 +290,6 @@ class OneHotEncoder:
         self.fit(X, y)
         
         # Transform the fitted data
-        transformed_features: List[np.ndarray] = self.transform(X)
-    
+        transformed_features: Union[List[np.ndarray], np.ndarray] = self.transform(X)
+
         return transformed_features
