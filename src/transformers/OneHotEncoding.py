@@ -182,6 +182,7 @@ class OneHotEncoder:
 
         Raises:
             AssertionError: If X is not 2D array.
+            TypeError: if categories is not a valid list of categories for each input feature.
         """
         # Validate input dimensions
         unitests.assert_ndim(X, 2)
@@ -258,7 +259,8 @@ class OneHotEncoder:
         
         return transformed_features
     
-    def fit_transform(self, X: np.ndarray, y: Optional[np.ndarray] = None) -> Union[List[np.ndarray], np.ndarray]:
+    def fit_transform(self, X: np.ndarray, y: Optional[np.ndarray] = None,
+                      categories: Union[list[np.ndarray], str] = 'auto') -> Union[List[np.ndarray], np.ndarray]:
         """
         Fit the encoder and transform the data in one step.
         
@@ -270,6 +272,7 @@ class OneHotEncoder:
             X (np.ndarray): Categorical feature matrix, shape (n_samples, n_features).
                           Each column represents a different categorical feature.
             y (Optional[np.ndarray]): Target values (ignored, present for API compatibility).
+            categories: Union[list[np.ndarray], str]: Precomputed categories for each categorical feature.
     
         Returns:
             List[np.ndarray] or np.ndarray: List of dummy variable matrices. Each element is a 2D array
@@ -280,6 +283,7 @@ class OneHotEncoder:
     
         Raises:
             AssertionError: If X is not 2D array.
+            TypeError: if categories is not a valid list of categories for each input feature.
             
         Example:
             >>> encoder = OneHotEncoder()
@@ -287,7 +291,8 @@ class OneHotEncoder:
             >>> # Equivalent to: encoder.fit(X_train); encoder.transform(X_train)
         """
         # Always fit first (even if already fitted, to handle new data patterns)
-        self.fit(X, y)
+        self.fit(X, y,
+                 categories)
         
         # Transform the fitted data
         transformed_features: Union[List[np.ndarray], np.ndarray] = self.transform(X)
