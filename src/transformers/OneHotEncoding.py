@@ -12,11 +12,11 @@ import tests.unit_tests as unitests
 class CategoricalDummyEncoder:
     """
     One-hot encoder for a single categorical feature.
-    
+
     Transforms a categorical feature into multiple binary dummy variables,
     where each dummy variable represents one category. This is also known
     as one-hot encoding for a single feature.
-    
+
     Example:
         >>> encoder = CategoricalDummyEncoder()
         >>> encoder.fit(np.array(['cat', 'dog', 'cat', 'bird']))
@@ -30,19 +30,35 @@ class CategoricalDummyEncoder:
 
         Args:
             categories (Union[np.ndarray, str]): Categories to encode. If 'auto',
-                                               categories will be inferred from training data.
+                categories will be inferred from training data.
         """
         self.categories: Union[np.ndarray, str] = categories
         self.is_fit: bool = False
-        
-        # Fitted attributes (initialized during fit)
+
+        # Will be set during fitting
         self.unique_categories_: np.ndarray = np.array([])
         self.unique_categories_set_: Set = set()
+
+    def validate_categories(self) -> None:
+        """
+        Validate the categories argument.
+
+        Raises:
+            ValueError: If categories is a string other than 'auto'.
+            TypeError: If categories is not a string or numpy.ndarray.
+        """
+        # Check if categories is a valid type and value
+        if isinstance(self.categories, str):
+            if not self.categories == 'auto':
+                raise ValueError(f"The string value of categories is {self.categories}. Expected: 'auto'")
+        elif not isinstance(self.categories, np.ndarray):
+            raise TypeError(f"Unexpected datatype of categories argument. "
+                            f"Got {type(self.categories)}. Expected str or numpy.ndarray")
 
     def fit(self, X: np.ndarray) -> None:
         """
         Fit the encoder to the categorical data.
-        
+
         Learns the unique categories present in the training data.
         If categories were specified during initialization, validates that
         all categories in X are in the predefined set.
@@ -53,15 +69,14 @@ class CategoricalDummyEncoder:
         Raises:
             AssertionError: If X is not 1D array.
         """
-        # Validate input dimensions
+        # Ensure input is 1D
         unitests.assert_ndim(X, 1)
 
-        # Learn categories from data if auto mode
+        # Learn categories from data if auto mode, otherwise use predefined
         if self.categories == 'auto':
             self.unique_categories_ = np.unique(X)
             self.unique_categories_set_ = set(self.unique_categories_)
         else:
-            # Use predefined categories
             self.unique_categories_ = np.asarray(self.categories)
             self.unique_categories_set_ = set(self.unique_categories_)
 
@@ -71,7 +86,7 @@ class CategoricalDummyEncoder:
     def transform(self, X: np.ndarray) -> np.ndarray:
         """
         Transform categorical data to dummy variables (one-hot encoding).
-        
+
         Each category becomes a binary column. The order of columns corresponds
         to the sorted order of unique categories found during fitting.
 
@@ -80,48 +95,50 @@ class CategoricalDummyEncoder:
 
         Returns:
             np.ndarray: Binary matrix of dummy variables, shape (n_samples, n_categories).
-                       Each row represents one sample, each column represents one category.
+                Each row represents one sample, each column represents one category.
 
         Raises:
             AssertionError: If encoder is not fitted, X is not 1D, or X contains unknown categories.
         """
-        # Validate input and model state
+        # Check input and fitting state
         unitests.assert_ndim(X, 1)
         unitests.assert_fitted(self.is_fit)
-        
-        # Check for unknown categories
+
+        # Check for unknown categories in input
         X_categories_set: Set = set(X)
         unknown_categories = X_categories_set.difference(self.unique_categories_set_)
         assert X_categories_set.issubset(self.unique_categories_set_), \
             f'Input data contains unknown categories: {unknown_categories}'
-        
-        # Create dummy variables matrix
-        # Broadcasting: (n_samples, 1) == (1, n_categories) -> (n_samples, n_categories)
+
+        # Create dummy variables matrix using broadcasting
+        # Each column corresponds to a unique category
         dummy_matrix: np.ndarray = np.array(
             X.reshape(-1, 1) == self.unique_categories_,
             dtype=np.uint8
         )
 
         return dummy_matrix
-    
+
     def fit_transform(self, X: np.ndarray) -> np.ndarray:
         """
         Fit the encoder and transform the data in one step.
-        
-        Convenience method that combines fitting and transformation for efficient workflow.
-        Equivalent to calling fit() followed by transform(), but returns the transformed data
-        directly.
-    
+
+        This convenience method combines fitting and transformation for efficient workflow.
+        It is equivalent to calling `fit()` followed by `transform()`, but returns the
+        transformed data directly. The output is a binary matrix of dummy variables
+        (one-hot encoded), where each column corresponds to a unique category found
+        during fitting.
+
         Args:
             X (np.ndarray): 1D array of categorical values, shape (n_samples,).
-    
+
         Returns:
             np.ndarray: Binary matrix of dummy variables, shape (n_samples, n_categories).
-                       Each row represents one sample, each column represents one category.
-    
+                Each row represents one sample, each column represents one category.
+
         Raises:
-            AssertionError: If X is not 1D array.
-            
+            AssertionError: If X is not a 1D array.
+
         Example:
             >>> encoder = CategoricalDummyEncoder()
             >>> dummy_matrix = encoder.fit_transform(np.array(['cat', 'dog', 'cat', 'bird']))
@@ -130,25 +147,21 @@ class CategoricalDummyEncoder:
         """
         # Fit the encoder to learn categories
         self.fit(X)
-        
         # Transform the data to dummy variables
         dummy_matrix: np.ndarray = self.transform(X)
-    
         return dummy_matrix
 
-
-    
 
 class OneHotEncoder:
     """
     Multi-feature one-hot encoder for categorical data.
-    
+
     Transforms multiple categorical features into binary dummy variables.
     Each categorical feature is encoded independently using the CategoricalDummyEncoder.
-    
+
     Example:
         >>> # Dataset with 2 categorical features
-        >>> X = np.array([['cat', 'small'], 
+        >>> X = np.array([['cat', 'small'],
         ...               ['dog', 'large'],
         ...               ['cat', 'medium']])
         >>> encoder = OneHotEncoder()
@@ -158,25 +171,50 @@ class OneHotEncoder:
     """
 
     def __init__(self) -> None:
-        """Initialize the multi-feature one-hot encoder."""
+        """
+        Initialize the multi-feature one-hot encoder.
+        """
         self.is_fit: bool = False
-        
-        # Fitted attributes (initialized during fit)
         self.n_features_: int = 0
         self.feature_encoders_: List[CategoricalDummyEncoder] = []
+
+    def validate_categories(self, X: np.ndarray, categories: Union[list[np.ndarray], str]) -> None:
+        """
+        Validate the categories argument for multi-feature encoding.
+
+        Args:
+            X (np.ndarray): Input feature matrix.
+            categories (Union[List[np.ndarray], str]): Categories for each feature or 'auto'.
+
+        Raises:
+            ValueError: If categories is a string other than 'auto', or if list length doesn't match feature count.
+            TypeError: If categories is not a string or list of numpy.ndarray.
+        """
+        # Check if categories is a valid type and value for all features
+        if isinstance(categories, str):
+            if not categories == 'auto':
+                raise ValueError(f"The string value of categories is {categories}. Expected: 'auto'")
+        elif isinstance(categories, list):
+            if not len(categories) == X.shape[1]:
+                raise ValueError(f"The length of categories ({len(categories)}) doesn't match the dimensionality of X ({X.shape[1]})")
+            if any([not isinstance(array, np.ndarray) for array in categories]):
+                raise TypeError("At least one element of categories list isn't numpy.ndarray")
+        else:
+            raise TypeError(f"Unexpected datatype of categories argument. "
+                            f"Got {type(categories)}. Expected str or numpy.ndarray")
 
     def fit(self, X: np.ndarray, y: Optional[np.ndarray] = None,
             categories: Union[list[np.ndarray], str] = 'auto') -> None:
         """
         Fit the one-hot encoder to categorical data.
-        
+
         Creates and fits a separate CategoricalDummyEncoder for each feature column.
         The y parameter is included for compatibility with sklearn-style transformers
         but is not used in the fitting process.
 
         Args:
             X (np.ndarray): Categorical feature matrix, shape (n_samples, n_features).
-                          Each column represents a different categorical feature.
+                Each column represents a different categorical feature.
             y (Optional[np.ndarray]): Target values (ignored, present for consistency)
             categories: Union[list[np.ndarray], str]: Precomputed categories for each categorical feature
 
@@ -184,31 +222,23 @@ class OneHotEncoder:
             AssertionError: If X is not 2D array.
             TypeError: if categories is not a valid list of categories for each input feature.
         """
-        # Validate input dimensions
+        # Validate the input matrix and categories
         unitests.assert_ndim(X, 2)
+        self.validate_categories(X, categories)
 
         # Store number of features
         self.n_features_ = X.shape[1]
-
-        # Initialize list to store encoders for each feature
         self.feature_encoders_ = []
 
         # Fit encoder for each categorical feature column
         for feature_idx in range(self.n_features_):
             feature_column: np.ndarray = X[:, feature_idx]
-
             # Create and fit encoder for current feature
             if categories == 'auto':
                 feature_encoder = CategoricalDummyEncoder()
-            elif isinstance(categories, list) and len(categories) == self.n_features_ and isinstance(categories[feature_idx], np.ndarray):
-                feature_encoder = CategoricalDummyEncoder(categories[feature_idx])
             else:
-                raise TypeError(f'''Unexpected datatype for list of categories. 
-                                Expected {self.n_features_}-length list of ndarrays, got {type(categories)} of {type(categories[feature_idx])}''')
-            
+                feature_encoder = CategoricalDummyEncoder(categories[feature_idx])
             feature_encoder.fit(feature_column)
-
-            # Store fitted encoder
             self.feature_encoders_.append(feature_encoder)
 
         # Mark as fitted
@@ -217,7 +247,7 @@ class OneHotEncoder:
     def transform(self, X: np.ndarray) -> List[np.ndarray]:
         """
         Transform categorical features to dummy variables.
-        
+
         Each feature column is independently transformed to its one-hot representation.
         Returns a list of arrays, where each array contains the dummy variables
         for one original feature.
@@ -226,14 +256,14 @@ class OneHotEncoder:
             X (np.ndarray): Categorical feature matrix to transform, shape (n_samples, n_features).
 
         Returns:
-            List[np.ndarray] or np.ndarray: List of dummy variable matrices. Each element is a 2D array
-                            with shape (n_samples, n_categories_for_feature_i), where
-                            n_categories_for_feature_i is the number of unique categories
-                            in the i-th feature.
+            List[np.ndarray]: List of dummy variable matrices. Each element is a 2D array
+                with shape (n_samples, n_categories_for_feature_i), where
+                n_categories_for_feature_i is the number of unique categories
+                in the i-th feature.
 
         Raises:
             AssertionError: If encoder is not fitted or X has wrong number of features.
-            
+
         Example:
             >>> # If X has 2 features with 3 and 2 categories respectively:
             >>> # Returns [array(shape=(n_samples, 3)), array(shape=(n_samples, 2))]
@@ -242,56 +272,47 @@ class OneHotEncoder:
         unitests.assert_fitted(self.is_fit)
         unitests.assert_feature_count(X, self.n_features_)
 
-        # Transform each feature independently
+        # Transform each feature independently using its encoder
         transformed_features: List[np.ndarray] = []
-        
         for feature_idx, feature_encoder in enumerate(self.feature_encoders_):
-            # Extract feature column and transform to dummy variables
             feature_column: np.ndarray = X[:, feature_idx]
             feature_dummies: np.ndarray = feature_encoder.transform(feature_column)
-            
-            # Add to results
             transformed_features.append(feature_dummies)
 
-
         return transformed_features
-    
+
     def fit_transform(self, X: np.ndarray, y: Optional[np.ndarray] = None,
                       categories: Union[list[np.ndarray], str] = 'auto') -> List[np.ndarray]:
         """
         Fit the encoder and transform the data in one step.
-        
+
         Convenience method that combines fitting and transformation for efficient workflow.
         Equivalent to calling fit() followed by transform(), but returns the transformed data
         directly. The y parameter is included for sklearn API compatibility.
-    
+
         Args:
             X (np.ndarray): Categorical feature matrix, shape (n_samples, n_features).
-                          Each column represents a different categorical feature.
+                Each column represents a different categorical feature.
             y (Optional[np.ndarray]): Target values (ignored, present for API compatibility).
             categories: Union[list[np.ndarray], str]: Precomputed categories for each categorical feature.
-    
+
         Returns:
-            List[np.ndarray] or np.ndarray: List of dummy variable matrices. Each element is a 2D array
-                            with shape (n_samples, n_categories_for_feature_i), where
-                            n_categories_for_feature_i is the number of unique categories
-                            in the i-th feature.
-                            When the input X has only one feature, returns a single 2D aray with shape (n_samples, n_categories_for_feature)
-    
+            List[np.ndarray]: List of dummy variable matrices. Each element is a 2D array
+                with shape (n_samples, n_categories_for_feature_i), where
+                n_categories_for_feature_i is the number of unique categories
+                in the i-th feature.
+
         Raises:
             AssertionError: If X is not 2D array.
             TypeError: if categories is not a valid list of categories for each input feature.
-            
+
         Example:
             >>> encoder = OneHotEncoder()
             >>> transformed_features = encoder.fit_transform(X_train)
             >>> # Equivalent to: encoder.fit(X_train); encoder.transform(X_train)
         """
         # Always fit first (even if already fitted, to handle new data patterns)
-        self.fit(X, y,
-                 categories)
-        
+        self.fit(X, y, categories)
         # Transform the fitted data
-        transformed_features: Union[List[np.ndarray], np.ndarray] = self.transform(X)
-
+        transformed_features: List[np.ndarray] = self.transform(X)
         return transformed_features
