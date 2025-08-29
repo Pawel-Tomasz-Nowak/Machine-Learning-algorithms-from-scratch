@@ -214,7 +214,7 @@ class OneHotEncoder:
         # Mark as fitted
         self.is_fit = True
 
-    def transform(self, X: np.ndarray) -> Union[List[np.ndarray], np.ndarray]:
+    def transform(self, X: np.ndarray) -> List[np.ndarray]:
         """
         Transform categorical features to dummy variables.
         
@@ -230,7 +230,6 @@ class OneHotEncoder:
                             with shape (n_samples, n_categories_for_feature_i), where
                             n_categories_for_feature_i is the number of unique categories
                             in the i-th feature.
-                            When the input X has only one feature, returns a single 2D aray with shape (n_samples, n_categories_for_feature)
 
         Raises:
             AssertionError: If encoder is not fitted or X has wrong number of features.
@@ -254,13 +253,11 @@ class OneHotEncoder:
             # Add to results
             transformed_features.append(feature_dummies)
 
-        if len(transformed_features) == 1:
-            return transformed_features[0]
-        
+
         return transformed_features
     
     def fit_transform(self, X: np.ndarray, y: Optional[np.ndarray] = None,
-                      categories: Union[list[np.ndarray], str] = 'auto') -> Union[List[np.ndarray], np.ndarray]:
+                      categories: Union[list[np.ndarray], str] = 'auto') -> List[np.ndarray]:
         """
         Fit the encoder and transform the data in one step.
         
