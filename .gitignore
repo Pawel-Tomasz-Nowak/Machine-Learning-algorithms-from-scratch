@@ -1,4 +1,33 @@
-__pycache__
-mlvenv
-test_notebooks
+# Environments
+venv/
+.venv/
+env/
+mlvenv/
+
+# Python cache
+__pycache__/
+*.py[cod]
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# IDE settings
+.vscode/
+.idea/
+
+# OS-generated files
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+*.egg-info
+
+# Local scripts and notes
+setup.ps1
+setup.bat
 todo.txt
+test_notebooks/

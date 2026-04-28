@@ -52,6 +52,10 @@ This repository contains implementations of various machine learning algorithms 
     ```
 
 2.  **Create and activate a virtual environment:**
+    - On Windows (Command Prompt):
+        ```bat
+        .\setup.bat
+        ```
     - On Windows (PowerShell):
         ```powershell
         .\setup.ps1
